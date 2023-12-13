@@ -87,7 +87,6 @@
         <url>http://www.evosuite.org/</url>
     </organization>
 
-
     <profiles>
         <profile>
             <!--  mvn source:jar javadoc:jar verify -PsignJars -DskipTests  -->
@@ -265,6 +264,18 @@
                 <compiler.source>1.8</compiler.source>
                 <exclude.tests.concolic />
                 <exclude.tests.mimeType />
+            </properties>
+        </profile>
+        <profile>
+            <id>java17</id>
+            <activation>
+                <jdk>17</jdk>
+            </activation>
+            <properties>
+                <compiler.target>17</compiler.target>
+                <compiler.source>17</compiler.source>
+                <exclude.tests.concolic>**/*Concolic*.java</exclude.tests.concolic>
+                <exclude.tests.mimeType>**/*TestMIMEType.java</exclude.tests.mimeType>
             </properties>
         </profile>
     </profiles>
@@ -446,6 +457,14 @@
                 <artifactId>system-rules</artifactId>
                 <version>1.19.0</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/properties-maven-plugin -->
+            <dependency>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.2.1</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -474,6 +493,25 @@
         </extensions>
 
         <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${basedir}/addopens.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
@@ -606,6 +644,9 @@
                     <source>${compiler.source}</source>
                     <target>${compiler.target}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <compilerArgs>
+                        <arg>--add-exports</arg><arg>java.desktop/sun.java2d=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -668,7 +709,7 @@
                         <exclude>${exclude.tests.concolic}</exclude>
                         <exclude>${exclude.tests.mimeType}</exclude>
                     </excludes>
-                    <argLine>-Djdk.attach.allowAttachSelf=true -Xms512m -Xmx4096m </argLine>
+                    <argLine>-Djdk.attach.allowAttachSelf=true -Xms512m -Xmx4096m  ${addopens}</argLine>
                 </configuration>
             </plugin>
             <!-- pluging to run tests after 'package' phase in 'integration-test' -->
@@ -844,7 +885,6 @@
         <systemTests>**/*SystemTest.java</systemTests>
         <integrationTests>**/*IntTest.java</integrationTests>
         <rerunFailingTestsCount>0</rerunFailingTestsCount>
-
     </properties>
 
 </project>
