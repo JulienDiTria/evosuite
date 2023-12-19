@@ -39,7 +39,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Represents the complete CFG of a method
  * <p>
- * Essentially this is a graph containing all BytecodeInstrucions of a method as
+ * Essentially this is a graph containing all BytecodeInstructions of a method as
  * nodes. From each such instruction there is an edge to each possible
  * instruction the control flow can reach immediately after that instruction.
  *

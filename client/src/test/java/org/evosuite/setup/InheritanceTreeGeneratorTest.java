@@ -19,6 +19,11 @@
  */
 package org.evosuite.setup;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.evosuite.classpath.ClassPathHandler;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,6 +36,26 @@ public class InheritanceTreeGeneratorTest {
     public void canFindJDKData() {
         InheritanceTree it = InheritanceTreeGenerator.readJDKData();
         Assert.assertNotNull(it);
+    }
+
+    @Test
+    public void createFromClassPath() {
+        // initialize classpath
+        List<String> initClassPath = new ArrayList<>();
+        String initCP = System.getProperty("user.dir") + "/target/test-classes";
+        initClassPath.add(initCP);
+        ClassPathHandler.getInstance().addElementToTargetProjectClassPath(initCP);
+
+
+        String cp = ClassPathHandler.getInstance().getTargetProjectClasspath();
+        List<String> classPath = Arrays.asList(cp.split(File.pathSeparator));
+
+        InheritanceTree it = InheritanceTreeGenerator.createFromClassPath(classPath);
+        Assert.assertNotNull(it);
+        it.getAllClasses().stream().sorted()
+            .limit(30)
+            .map(c -> c + " -> " + it.getSuperclasses(c).toString())
+            .forEach(c -> System.out.println(c));
     }
 
 }
