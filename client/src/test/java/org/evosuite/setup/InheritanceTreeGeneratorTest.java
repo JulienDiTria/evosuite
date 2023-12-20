@@ -39,7 +39,7 @@ public class InheritanceTreeGeneratorTest {
     }
 
     @Test
-    public void createFromClassPath() {
+    public void createFromClassPathAndCheckSpringPetClinicBaseEntity() {
         // initialize classpath
         List<String> initClassPath = new ArrayList<>();
         String initCP = System.getProperty("user.dir") + "/target/test-classes";
@@ -52,9 +52,9 @@ public class InheritanceTreeGeneratorTest {
 
         InheritanceTree it = InheritanceTreeGenerator.createFromClassPath(classPath);
         Assert.assertNotNull(it);
-        it.getAllClasses().stream().sorted()
+        it.getAllClasses().stream().filter(c -> c.contains("BaseEntity"))
             .limit(30)
-            .map(c -> c + " -> " + it.getSuperclasses(c).toString())
+            .map(c -> it.getSubclasses(c) + " -> " + c + " -> " + it.getSuperclasses(c).toString())
             .forEach(c -> System.out.println(c));
     }
 

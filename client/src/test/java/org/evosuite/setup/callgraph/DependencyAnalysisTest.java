@@ -62,8 +62,8 @@ public class DependencyAnalysisTest {
                         "checkFiftneen(I)Z").toString();
 
         assertEquals(
-                context1,
-                "[com.examples.with.different.packagename.context.complex.EntryPointsClass:dosmt(ILjava/lang/String;D)V com.examples.with.different.packagename.context.complex.SubClass:checkFiftneen(I)Z]");
+            "[com.examples.with.different.packagename.context.complex.EntryPointsClass:dosmt(ILjava/lang/String;D)V com.examples.with.different.packagename.context.complex.SubClass:checkFiftneen(I)Z]",
+            context1);
     }
 
     /**
@@ -108,7 +108,5 @@ public class DependencyAnalysisTest {
                 context2,
                 "[com.examples.with.different.packagename.context.complex.EntryPointsClass:doObj(Lcom/examples/with/different/packagename/context/complex/AParameterObject;)V com.examples.with.different.packagename.context.complex.ParameterObject:isEnabled()Z]");
     }
-
-    //
 
 }
