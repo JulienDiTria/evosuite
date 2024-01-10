@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import net.minidev.json.JSONUtil;
+import org.apache.commons.collections4.IterableUtils;
 import org.evosuite.Properties;
 import org.evosuite.classpath.ClassPathHandler;
 import org.evosuite.setup.DependencyAnalysis;
@@ -85,9 +86,14 @@ public class DependencyAnalysis_Spring {
         context2);
 
     CallGraph cg = DependencyAnalysis.getCallGraph();
+    ReverseCallGraph rcg = cg.getGraph();
     cg.getViewOfCurrentMethods().stream()
+        .filter(m -> m.getClassName().startsWith("com.examples.with.different.packagename.spring.petclinic"))
         .sorted(Comparator.comparing(CallGraphEntry::getClassName))
-        .map(m -> m.getClassName() + " " + m.getMethodName() + cg.getCallsFromMethod(m).stream().map(g -> g.getClassName() + " " + g.getMethodName()).reduce("", (a, b) -> a + "\n\t" + b) + "\n")
+        .map(m -> "\n" + m.getClassName() + " " + m.getMethodName()
+            + "\ncalled by : " + cg.getCallsFromMethod(m).stream().map(g -> g.getClassName() + " " + g.getMethodName()).reduce("", (a, b) -> a + "\n\t- " + b)
+            + "\ncalls : " + IterableUtils.toList(rcg.getReverseNeighbors(m)).stream().map(g -> g.getClassName() + " " + g.getMethodName()).reduce("", (a, b) -> a + "\n\t- " + b))
         .forEach(System.out::println);
+
   }
 }
