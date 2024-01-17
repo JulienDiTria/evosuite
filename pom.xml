@@ -173,11 +173,11 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <file>
-                    <exists>${java.home}/../Classes/classes.jar</exists>
+                    <exists>${java.home}/../lib/tools.jar</exists>
                 </file>
             </activation>
             <properties>
-                <toolsjar>${java.home}/../Classes/classes.jar</toolsjar>
+                <toolsjar>${java.home}/../lib/tools.jar</toolsjar>
             </properties>
             <dependencyManagement>
                 <dependencies>
@@ -186,7 +186,7 @@
                         <artifactId>tools</artifactId>
                         <version>1.0.0</version>
                         <scope>system</scope>
-                        <systemPath>${java.home}/../Classes/classes.jar</systemPath>
+                        <systemPath>${java.home}/../lib/tools.jar</systemPath>
                     </dependency>
                 </dependencies>
             </dependencyManagement>
