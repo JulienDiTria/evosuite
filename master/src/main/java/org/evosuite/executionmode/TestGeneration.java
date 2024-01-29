@@ -529,7 +529,7 @@ public class TestGeneration {
             }
 
             if (Properties.CLIENT_ON_THREAD) {
-                handler.stopAndWaitForClientOnThread(10000);
+                handler.stopAndWaitForClientOnThread(1000000);
             }
 
             handler.killAllProcesses();

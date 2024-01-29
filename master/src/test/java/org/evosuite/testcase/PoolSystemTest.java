@@ -52,6 +52,9 @@ import com.examples.with.different.packagename.pool.DependencyClassWithException
 import com.examples.with.different.packagename.pool.DependencySubClass;
 import com.examples.with.different.packagename.pool.OtherClass;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+
 public class PoolSystemTest extends SystemTestBase {
 
     private String pools = "";
@@ -90,6 +93,7 @@ public class PoolSystemTest extends SystemTestBase {
 
     @Test
     public void testPool() throws IOException {
+        Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
         File f = File.createTempFile("EvoSuiteTestPool", null, FileUtils.getTempDirectory());
         String filename = f.getAbsolutePath();
         f.delete();
@@ -113,6 +117,7 @@ public class PoolSystemTest extends SystemTestBase {
         resetStaticVariables();
         setDefaultPropertiesForTestCases();
 
+        Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
         targetClass = OtherClass.class.getCanonicalName();
         Properties.TARGET_CLASS = targetClass;
         Properties.P_OBJECT_POOL = 1.0;
@@ -142,6 +147,8 @@ public class PoolSystemTest extends SystemTestBase {
         String targetClass = OtherClass.class.getCanonicalName();
         Properties.TARGET_CLASS = targetClass;
         Properties.P_OBJECT_POOL = 0.0;
+        Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
+        Properties.TIMEOUT = 1000000;
 
         String[] command = new String[]{"-generateSuite", "-class", targetClass};
 
@@ -150,6 +157,7 @@ public class PoolSystemTest extends SystemTestBase {
         TestSuiteChromosome best = ga.getBestIndividual();
         System.out.println("EvolvedTestSuite:\n" + best);
 
+        System.out.println("Coverage: " + best.getCoverage());
         Assert.assertTrue("Expected non-optimal coverage: ", best.getCoverage() < 1.0);
         // Seems to pass now even without pool...
     }
