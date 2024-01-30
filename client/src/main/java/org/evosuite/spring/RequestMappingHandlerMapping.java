@@ -22,6 +22,7 @@
 
 package org.evosuite.spring;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
@@ -43,7 +44,7 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class RequestMappingHandlerMapping {
 
-  private static final Logger logger = LoggerFactory.getLogger(TestFactory.class);
+  private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final MappingRegistry<RequestMappingInfo> registry = new MappingRegistry<>();
 
