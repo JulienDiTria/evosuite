@@ -15,12 +15,30 @@
  */
 
 /*
- * License from repo org/springframework/spring-test/5.1.2.RELEASE
- * org/springframework/mock/web/MockHttpServletResponse.java
+ * License from repo org/springframework/spring-web/5.1.2.RELEASE
+ * org/springframework/web/method/HandlerMethod
  * Code taken and adapted to work with EvoSuite
  */
 
 package org.evosuite.spring;
 
-public class SmockResponse {
+import java.lang.reflect.Method;
+
+public class HandlerMethod {
+  Class<?> handler;
+  Method method;
+
+  public HandlerMethod(Class<?> handler, Method method) {
+    this.handler = handler;
+    this.method = method;
+  }
+
+  public Method getMethod() {
+    return method;
+  }
+
+  public Class<?> getHandler() {
+      return handler;
+  }
+
 }

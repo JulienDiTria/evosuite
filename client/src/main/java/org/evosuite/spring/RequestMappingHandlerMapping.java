@@ -1,3 +1,25 @@
+/*
+ * Copyright 2002-2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * License from repo org/springframework/spring-webmvc/5.1.2.RELEASE
+ * org/springframework/web/servlet/mvc/method/annotation/RequestMappingHandlerMapping
+ * Code taken and adapted to work with EvoSuite
+ */
+
 package org.evosuite.spring;
 
 import java.lang.reflect.AnnotatedElement;
@@ -12,6 +34,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Controller;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringValueResolver;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,17 +48,36 @@ public class RequestMappingHandlerMapping {
   private final MappingRegistry<RequestMappingInfo> registry = new MappingRegistry<>();
 
   private final Map<String, Predicate<Class<?>>> pathPrefixes = new LinkedHashMap<>();
+
   @Nullable
   private final StringValueResolver embeddedValueResolver = null;
+
+  private RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
+
+  public void processCandidateController(Object controller) {
+    Class<?> clazz = getClassForObject(controller);
+    if (clazz != null && isHandler(clazz)) {
+      detectHandlerMethods(clazz);
+    }
+  }
+
+  /**
+   * Whether the given object is a handler with handler methods.
+   * Expects a handler to have either a type-level @Controller annotation or a type-level @RequestMapping annotation.
+   *
+   * @param object the object to check
+   * @return true if the object is a handler, false otherwise
+   */
+  private boolean isHandler(Class<?> object) {
+    return (AnnotatedElementUtils.hasAnnotation(object, Controller.class) ||
+        AnnotatedElementUtils.hasAnnotation(object, RequestMapping.class));
+  }
 
   /**
    * Detects handler methods at initialization.
    * @param handler the full classname of a handler or a handler instance
-   * @throws Exception if initialization fails
    */
-  public void detectHandlerMethods(Object handler) {
-    Class<?> handlerType = getClassForObject(handler);
-
+  private void detectHandlerMethods(Class<?> handlerType) {
     if (handlerType != null) {
       Class<?> userType = ClassUtils.getUserClass(handlerType);
       Map<Method, RequestMappingInfo> methods = MethodIntrospector.selectMethods(userType,
@@ -50,12 +92,17 @@ public class RequestMappingHandlerMapping {
           });
       methods.forEach((method, mapping) -> {
         Method invocableMethod = AopUtils.selectInvocableMethod(method, userType);
-        registerHandlerMethod(handler, invocableMethod, mapping);
+        registerHandlerMethod(handlerType, invocableMethod, mapping);
       });
     }
   }
 
-  private Class<?> getClassForObject(Object object) {
+  /**
+   * Get the class for an object.
+   * @param object the object for which to find the class
+   * @return the class of the object
+   */
+  private static Class<?> getClassForObject(Object object) {
     Class<?> clazz;
     try {
       clazz = (object instanceof String ? Class.forName((String) object) : object.getClass());
@@ -66,11 +113,17 @@ public class RequestMappingHandlerMapping {
     return clazz;
   }
 
-  void registerHandlerMethod(Object handler, Method method, RequestMappingInfo mapping) {
+  /**
+   * Register a handler method into the local registry.
+   * @param handler the handler object
+   * @param method the method to register
+   * @param mapping the request mapping conditions associated with the handler method
+   */
+  private void registerHandlerMethod(Class<?> handler, Method method, RequestMappingInfo mapping) {
     this.registry.register(mapping, handler, method);
   }
 
-  RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
+  private RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
     RequestMappingInfo info = createRequestMappingInfo(method);
     if (info != null) {
       RequestMappingInfo typeInfo = createRequestMappingInfo(handlerType);
@@ -92,12 +145,11 @@ public class RequestMappingHandlerMapping {
     return (requestMapping != null ? createRequestMappingInfo(requestMapping, condition) : null);
   }
 
-  RequestMappingInfo createRequestMappingInfo(
+  private RequestMappingInfo createRequestMappingInfo(
       RequestMapping requestMapping, @Nullable RequestCondition<?> customCondition) {
 
     RequestMappingInfo.Builder builder = RequestMappingInfo
-//        .paths(resolveEmbeddedValuesInPatterns(requestMapping.path()))
-        .paths(requestMapping.path())
+        .paths(resolveEmbeddedValuesInPatterns(requestMapping.path()))
         .methods(requestMapping.method())
         .params(requestMapping.params())
         .headers(requestMapping.headers())
@@ -107,8 +159,7 @@ public class RequestMappingHandlerMapping {
     if (customCondition != null) {
       builder.customCondition(customCondition);
     }
-//    return builder.options(this.config).build();
-    return builder.build();
+    return builder.options(this.config).build();
   }
 
   @Nullable
@@ -122,7 +173,7 @@ public class RequestMappingHandlerMapping {
   }
 
   @Nullable
-  String getPathPrefix(Class<?> handlerType) {
+  private String getPathPrefix(Class<?> handlerType) {
     for (Map.Entry<String, Predicate<Class<?>>> entry : this.pathPrefixes.entrySet()) {
       if (entry.getValue().test(handlerType)) {
         String prefix = entry.getKey();
@@ -133,6 +184,19 @@ public class RequestMappingHandlerMapping {
       }
     }
     return null;
+  }
+
+  protected String[] resolveEmbeddedValuesInPatterns(String[] patterns) {
+    if (this.embeddedValueResolver == null) {
+      return patterns;
+    }
+    else {
+      String[] resolvedPatterns = new String[patterns.length];
+      for (int i = 0; i < patterns.length; i++) {
+        resolvedPatterns[i] = this.embeddedValueResolver.resolveStringValue(patterns[i]);
+      }
+      return resolvedPatterns;
+    }
   }
 
   @Override
