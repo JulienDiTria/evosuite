@@ -43,7 +43,7 @@ import java.util.*;
 
 /**
  * This statement represents a constructor call, generating a new instance of any given class, e.g.,
- * {@code Stack stack = new Stack()}. Value and type of the of the statement are defined by the
+ * {@code Stack stack = new Stack()}. Value and type  of the statement are defined by the
  * object constructed in the call.
  *
  * @author Gordon Fraser

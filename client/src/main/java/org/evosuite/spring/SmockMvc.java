@@ -22,22 +22,19 @@
 
 package org.evosuite.spring;
 
+import com.sun.tools.javac.util.List;
+import java.lang.reflect.Constructor;
+import java.util.Collections;
+import org.evosuite.testcase.TestCase;
+import org.evosuite.testcase.statements.ConstructorStatement;
+import org.evosuite.testcase.variable.VariableReference;
+import org.evosuite.utils.generic.GenericConstructor;
+import org.springframework.http.HttpMethod;
+
 public class SmockMvc {
 
-  private final RequestMappingHandlerMapping requestMappingHandlerMapping;
-
   public SmockMvc(){
-    requestMappingHandlerMapping = new RequestMappingHandlerMapping();
-  }
-
-  /**
-   * Process the candidate controller which consists of
-   * - registering the handler methods.
-   *
-   * @param controller the candidate controller
-   */
-  public void processCandidateController(Object controller) {
-    requestMappingHandlerMapping.processCandidateController(controller);
+    // empty constructor
   }
 
   /**
@@ -60,6 +57,22 @@ public class SmockMvc {
 
     // wrap around the mvc result
     return new SmockResultActions(mvcResult);
+  }
+
+  public static VariableReference createSmockMvc(TestCase tc){
+    // create the smock mvc object
+    Constructor<?> constructor = null;
+    try {
+      constructor = SmockMvc.class.getConstructor();
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
+    GenericConstructor genericConstructor = new GenericConstructor(constructor, SmockMvc.class);
+    ConstructorStatement statement = new ConstructorStatement(tc, genericConstructor, Collections.emptyList());
+
+    // add the statement to the test case
+    VariableReference smockMvc = tc.addStatement(statement);
+    return smockMvc;
   }
 
 }

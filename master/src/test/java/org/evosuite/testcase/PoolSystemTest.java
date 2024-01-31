@@ -148,7 +148,7 @@ public class PoolSystemTest extends SystemTestBase {
         Properties.TARGET_CLASS = targetClass;
         Properties.P_OBJECT_POOL = 0.0;
         Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
-        Properties.TIMEOUT = 1000000;
+        Properties.TIMEOUT = 10000;
 
         String[] command = new String[]{"-generateSuite", "-class", targetClass};
 

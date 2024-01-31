@@ -22,15 +22,36 @@
 
 package org.evosuite.spring;
 
+import com.sun.tools.javac.util.List;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import org.evosuite.testcase.TestCase;
+import org.evosuite.testcase.statements.ArrayStatement;
+import org.evosuite.testcase.statements.ConstructorStatement;
+import org.evosuite.testcase.statements.MethodStatement;
+import org.evosuite.testcase.variable.ArrayReference;
+import org.evosuite.testcase.variable.ConstantValue;
+import org.evosuite.testcase.variable.VariableReference;
+import org.evosuite.testcase.variable.VariableReferenceImpl;
+import org.evosuite.utils.generic.GenericClassFactory;
+import org.evosuite.utils.generic.GenericConstructor;
+import org.evosuite.utils.generic.GenericMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class SmockRequestBuilder {
+
+      private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 //      private static HTTP
 
@@ -71,5 +92,35 @@ public class SmockRequestBuilder {
             for (T value : values) {
                   map.add(name, value);
             }
+      }
+
+      /**
+       * Helper to create a SmockMvcRequestBuilder in evosuite
+       */
+      public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
+//            public SmockRequestBuilder(HttpMethod httpMethod, String url)
+            logger.debug("createRequestBuilder");
+
+            // get the http method as the request method into a new HttpMethod enum
+            HttpMethod httpMethod = HttpMethod.resolve(requestMappingInfo.getMethodsCondition().getMethods().iterator().next().name());
+            ConstantValue httpMethodValue = new ConstantValue(tc, GenericClassFactory.get(HttpMethod.class), httpMethod);
+
+            // get the url template as the first pattern into a string constant
+            String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
+            ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), url);
+
+            // create the request builder
+            Constructor<?> constructor = null;
+            try {
+                  constructor = SmockRequestBuilder.class.getConstructor(HttpMethod.class, String.class);
+            } catch (NoSuchMethodException e) {
+                  throw new RuntimeException(e);
+            }
+            GenericConstructor genericConstructor = new GenericConstructor(constructor, SmockRequestBuilder.class);
+            ConstructorStatement statement = new ConstructorStatement(tc, genericConstructor, List.of(httpMethodValue, urlValue));
+
+            // add the statement to the test case
+            VariableReference requestBuilder = tc.addStatement(statement);
+            return requestBuilder;
       }
 }
