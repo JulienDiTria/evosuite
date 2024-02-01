@@ -28,37 +28,36 @@ public class SpringTestFactory {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+  /**
+   * Creates a test case for the given request mapping info.
+   * The test case contains a request builder that is created using the SmockRequestBuilder class.
+   * The request builder is then used to perform the request and the result is returned.
+   * The test case doesn't contain any assertions at this stage.
+   *
+   * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
+   * @return the test case containing the request builder and the result
+   */
   public static TestCase createTestCaseForRequestMapping(RequestMappingInfo requestMappingInfo) {
     logger.warn("createTestCaseForRequestMapping");
     TestCase tc = new DefaultTestCase();
     VariableReference requestBuilder = addRequestBuilder(tc, requestMappingInfo);
     logger.debug("{}", requestBuilder);
     VariableReference mvcResult = performAndGetResult(tc, requestBuilder);
-    addAsserts(tc);
     return tc;
   }
 
   private static VariableReference addRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
     logger.debug("addRequestBuilder");
-    VariableReference requestBuilder = createRequestBuilder(tc, requestMappingInfo);
-    requestBuilder = addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);
+    VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(tc, requestMappingInfo);
+    requestBuilder = SmockRequestBuilder.addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);
     return requestBuilder;
   }
 
   /**
-   * Creates a request builder for the given request mapping info using the SmockRequestBuilder class.
-   * @param tc
-   * @param requestMappingInfo
-   * @return
-   */
-  private static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
-    return SmockRequestBuilder.createRequestBuilder(tc, requestMappingInfo);
-  }
-
-  /**
    * Creates a request builder for the given request mapping info using the MockMvcRequestBuilders class.
+   *
    * @param tc the test case to add the request builder to
-   * @param requestMappingInfo the request mapping info to create the request builder for
+   * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
    * @return the request builder reference added to the testcase
    */
   private static VariableReference createRequestBuilderWithMockMvcRequestBuilders(TestCase tc, RequestMappingInfo requestMappingInfo) {
@@ -87,95 +86,29 @@ public class SpringTestFactory {
     return requestBuilder;
   }
 
-  private static VariableReference addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
-      RequestMappingInfo requestMappingInfo) {
-    logger.debug("addParamsToRequestBuilder");
-
-    // get the params as a list of string constants
-    ParamsRequestCondition paramsRequestCondition = requestMappingInfo.getParamsCondition();
-    Set<NameValueExpression<String>> expressions = paramsRequestCondition.getExpressions();
-    VariableReference ref = expressions.stream().map(param ->
-        addParamToRequestBuilder(tc, requestBuilder, param)
-    ).reduce((a, b) -> b).orElse(requestBuilder);
-    logger.debug("{}", ref);
-    return ref;
-  }
-
-  private static VariableReference addParamToRequestBuilder(TestCase tc, VariableReference requestBuilder, NameValueExpression param) {
-    logger.debug("addParamToRequestBuilder");
-
-    // TODO 31.01.2024 Julien Di Tria
-    //  param value (and maybe name) can be GA variable to be mutated
-
-    // get the param name and value as string constants
-    ConstantValue paramName = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getName());
-    ConstantValue paramValue = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getValue());
-
-    // call the param method on the request builder
-    Method method;
-    try {
-      method = MockHttpServletRequestBuilder.class.getMethod("param", String.class, String[].class);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-    GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
-    VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-    MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, paramValue), retVal);
-    requestBuilder = tc.addStatement(statement);
-    return requestBuilder;
-  }
 
   /**
-   * SmockMvc mockMvc = New SmockMvc();
-   * ResultActions resultActions = mockMvc.perform(requestBuilder);
-   * @param tc
+   * Performs the request contained by the request builder and return the ResultActions wrapping around the result.
+   *
+   * SmockMvc smockMvc = New SmockMvc();
+   * ResultActions resultActions = smockMvc.perform(requestBuilder);
+   * MvcResult mvcResult = resultActions.andReturn();
+   *
+   * @param tc the test case in which the request is performed
+   * @param requestBuilder the request builder that contains the request to be performed
    */
   private static VariableReference performAndGetResult(TestCase tc, VariableReference requestBuilder) {
-    logger.debug("addMockPerform");
+    logger.debug("performAndGetResult");
 
-    // create the mock perform method
+    // create the smockMVC object
     VariableReference smockMvc = SmockMvc.createSmockMvc(tc);
 
-    // call "perform" method on the smockMvc object
-    Method method = null;
-    try {
-      method = SmockMvc.class.getMethod("perform", SmockRequestBuilder.class);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-    GenericMethod genericMethod = new GenericMethod(method, SmockMvc.class);
-    VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
+    // call perform and get the result actions
+    VariableReference resultActions = SmockMvc.perform(tc, smockMvc, requestBuilder);
 
-    // TODO 31.01.2024 Julien Di Tria
-    //  This MethodStatement should be extended into a new class and replaced in order to DSE the perform method
-    //  (specifically the request.execute() method) to run as Spring would do instead of concrete execution
-    MethodStatement statement = new MethodStatement(tc, genericMethod, smockMvc, List.of(requestBuilder), retVal);
-    VariableReference resultActions = tc.addStatement(statement);
-
-    // return the result actions from
-    VariableReference mvcResult = getResult(tc, resultActions);
+    // return the mvcResult from the result actions
+    VariableReference mvcResult = SmockResultActions.andReturn(tc, resultActions);
     return mvcResult;
-  }
-
-  private static VariableReference getResult(TestCase tc, VariableReference resultActions) {
-    logger.debug("getResult");
-
-    // call "andReturn" method on the resultActions object
-    Method method = null;
-    try {
-      method = ResultActions.class.getMethod("andReturn");
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-    GenericMethod genericMethod = new GenericMethod(method, ResultActions.class);
-    VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-    MethodStatement statement = new MethodStatement(tc, genericMethod, resultActions, Collections.emptyList(), retVal);
-    VariableReference mvcResult = tc.addStatement(statement);
-    return mvcResult;
-  }
-
-  private static void addAsserts(TestCase tc) {
-    logger.debug("addAsserts");
   }
 
 }

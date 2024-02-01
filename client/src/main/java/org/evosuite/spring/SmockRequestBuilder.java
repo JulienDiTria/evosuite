@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Set;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.ConstructorStatement;
@@ -43,10 +44,13 @@ import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.mvc.condition.NameValueExpression;
+import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class SmockRequestBuilder {
@@ -94,33 +98,106 @@ public class SmockRequestBuilder {
             }
       }
 
+      /*
+       * ***********************
+       * EVOSUITE helpers
+       * ***********************
+       */
+
       /**
-       * Helper to create a SmockMvcRequestBuilder in evosuite
+       * Helper to create a SmockMvcRequestBuilder in evosuite.
+       * Creates a request builder for the given request mapping info.
+       *
+       * SmockRequestBuilder requestBuilder = new SmockRequestBuilder(HttpMethod.GET, "/api/1");
+       *
+       * @param tc the test case to add the request builder to
+       * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
+       * @return the request builder reference added to the testcase
        */
       public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
-//            public SmockRequestBuilder(HttpMethod httpMethod, String url)
             logger.debug("createRequestBuilder");
 
             // get the http method as the request method into a new HttpMethod enum
             HttpMethod httpMethod = HttpMethod.resolve(requestMappingInfo.getMethodsCondition().getMethods().iterator().next().name());
             ConstantValue httpMethodValue = new ConstantValue(tc, GenericClassFactory.get(HttpMethod.class), httpMethod);
 
+            // TODO 01.02.2024 Julien Di Tria
+            //  url value can be GA variable to be mutated (if not given by the request mapping info)
             // get the url template as the first pattern into a string constant
             String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
             ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), url);
 
-            // create the request builder
+            // get the constructor by reflection
             Constructor<?> constructor = null;
             try {
                   constructor = SmockRequestBuilder.class.getConstructor(HttpMethod.class, String.class);
             } catch (NoSuchMethodException e) {
                   throw new RuntimeException(e);
             }
+
+            // create the constructor statement
             GenericConstructor genericConstructor = new GenericConstructor(constructor, SmockRequestBuilder.class);
             ConstructorStatement statement = new ConstructorStatement(tc, genericConstructor, List.of(httpMethodValue, urlValue));
 
             // add the statement to the test case
             VariableReference requestBuilder = tc.addStatement(statement);
+            return requestBuilder;
+      }
+
+      /**
+       * Adds the params given in the request mapping info to the request builder.
+       * Each param is added as a call to the param method on the request builder and return the request builder reference.
+       *
+       * @param tc the test case in which the params are added
+       * @param requestBuilder the request builder to add the params to
+       * @param requestMappingInfo the request mapping info provided by the Spring framework containing a seed for the parameters
+       * @return the request builder reference added to the testcase
+       */
+      public static VariableReference addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
+          RequestMappingInfo requestMappingInfo) {
+            logger.debug("addParamsToRequestBuilder");
+
+            // TODO 01.02.2024 Julien Di Tria
+            //  param name can be GA variable to be mutated (sometimes adding that param, somtimes not)
+            // get the params as a list of string constants
+            ParamsRequestCondition paramsRequestCondition = requestMappingInfo.getParamsCondition();
+            Set<NameValueExpression<String>> expressions = paramsRequestCondition.getExpressions();
+            VariableReference ref = expressions.stream().map(param ->
+                addParamToRequestBuilder(tc, requestBuilder, param)
+            ).reduce((a, b) -> b).orElse(requestBuilder);
+            logger.debug("{}", ref);
+            return ref;
+      }
+
+      /**
+       * Adds the param given to the request builder.
+       * The param is added as a call to the param method on the request builder and return the request builder reference.
+       *
+       * @param tc the test case in which the param is added
+       * @param requestBuilder the request builder to add the param to
+       * @param param the param to add
+       * @return the request builder reference added to the testcase
+       */
+      private static VariableReference addParamToRequestBuilder(TestCase tc, VariableReference requestBuilder, NameValueExpression param) {
+            logger.debug("addParamToRequestBuilder");
+
+            // TODO 01.02.2024 Julien Di Tria
+            //  param value can be GA variable to be mutated (based on value pool and guided by the actual parameter in the function call)
+            // get the param name and value as string constants
+            ConstantValue paramName = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getName());
+            ConstantValue paramValue = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getValue());
+
+            // create the param method on the request builder
+            Method method;
+            try {
+                  method = SmockRequestBuilder.class.getMethod("param", String.class, String[].class);
+            } catch (NoSuchMethodException e) {
+                  throw new RuntimeException(e);
+            }
+            GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
+            VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
+            MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, paramValue), retVal);
+            requestBuilder = tc.addStatement(statement);
             return requestBuilder;
       }
 }
