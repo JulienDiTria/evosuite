@@ -3,8 +3,6 @@ package org.evosuite.spring;
 import com.sun.tools.javac.util.List;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.Set;
 import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
@@ -17,11 +15,7 @@ import org.evosuite.utils.generic.GenericClassFactory;
 import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.web.servlet.mvc.condition.NameValueExpression;
-import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class SpringTestFactory {
@@ -49,7 +43,7 @@ public class SpringTestFactory {
   private static VariableReference addRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
     logger.debug("addRequestBuilder");
     VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(tc, requestMappingInfo);
-    requestBuilder = SmockRequestBuilder.addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);
+    SmockRequestBuilder.addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);
     return requestBuilder;
   }
 

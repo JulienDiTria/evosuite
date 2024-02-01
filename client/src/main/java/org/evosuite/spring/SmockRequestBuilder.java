@@ -151,9 +151,8 @@ public class SmockRequestBuilder {
        * @param tc the test case in which the params are added
        * @param requestBuilder the request builder to add the params to
        * @param requestMappingInfo the request mapping info provided by the Spring framework containing a seed for the parameters
-       * @return the request builder reference added to the testcase
        */
-      public static VariableReference addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
+      public static void addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
           RequestMappingInfo requestMappingInfo) {
             logger.debug("addParamsToRequestBuilder");
 
@@ -162,11 +161,7 @@ public class SmockRequestBuilder {
             // get the params as a list of string constants
             ParamsRequestCondition paramsRequestCondition = requestMappingInfo.getParamsCondition();
             Set<NameValueExpression<String>> expressions = paramsRequestCondition.getExpressions();
-            VariableReference ref = expressions.stream().map(param ->
-                addParamToRequestBuilder(tc, requestBuilder, param)
-            ).reduce((a, b) -> b).orElse(requestBuilder);
-            logger.debug("{}", ref);
-            return ref;
+            expressions.forEach(param -> addParamToRequestBuilder(tc, requestBuilder, param));
       }
 
       /**
@@ -178,7 +173,7 @@ public class SmockRequestBuilder {
        * @param param the param to add
        * @return the request builder reference added to the testcase
        */
-      private static VariableReference addParamToRequestBuilder(TestCase tc, VariableReference requestBuilder, NameValueExpression param) {
+      private static void addParamToRequestBuilder(TestCase tc, VariableReference requestBuilder, NameValueExpression param) {
             logger.debug("addParamToRequestBuilder");
 
             // TODO 01.02.2024 Julien Di Tria
@@ -197,7 +192,6 @@ public class SmockRequestBuilder {
             GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
             VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
             MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, paramValue), retVal);
-            requestBuilder = tc.addStatement(statement);
-            return requestBuilder;
+            tc.addStatement(statement);
       }
 }

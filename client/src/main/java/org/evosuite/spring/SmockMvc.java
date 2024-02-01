@@ -33,7 +33,6 @@ import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericConstructor;
 import org.evosuite.utils.generic.GenericMethod;
-import org.springframework.http.HttpMethod;
 
 public class SmockMvc {
 
