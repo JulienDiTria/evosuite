@@ -5,6 +5,7 @@ import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
+import org.evosuite.testsuite.TestSuiteChromosome;
 import org.junit.Test;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -26,6 +27,13 @@ public class TestSpringTestFactory {
     TestChromosome c = new TestChromosome();
     c.setTestCase(test);
     ExecutionResult executionResult = c.executeForFitnessFunction(new BranchCoverageSuiteFitness());
-    System.out.println(executionResult.getExecutionTime());
+
+    System.out.println("test executed in " + executionResult.getExecutionTime() + "ms");
+    if (executionResult.getAllThrownExceptions().isEmpty()) {
+      System.out.println("no exception");
+    } else {
+      executionResult.getAllThrownExceptions().forEach(e -> System.out.println("exception" + e.toString()));
+    }
+
   }
 }

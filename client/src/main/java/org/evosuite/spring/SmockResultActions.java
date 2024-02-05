@@ -22,6 +22,7 @@
 
 package org.evosuite.spring;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import org.evosuite.testcase.TestCase;
@@ -29,9 +30,11 @@ import org.evosuite.testcase.statements.MethodStatement;
 import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericMethod;
-import org.springframework.test.web.servlet.ResultActions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SmockResultActions {
+  private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   SmockMvcResult mvcResult;
 
@@ -64,13 +67,13 @@ public class SmockResultActions {
     // get the "andReturn" method by reflection
     Method method;
     try {
-      method = ResultActions.class.getMethod("andReturn");
+      method = SmockResultActions.class.getMethod("andReturn");
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
 
     // create the method statement
-    GenericMethod genericMethod = new GenericMethod(method, ResultActions.class);
+    GenericMethod genericMethod = new GenericMethod(method, SmockResultActions.class);
     VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
     MethodStatement statement = new MethodStatement(tc, genericMethod, resultActions, Collections.emptyList(), retVal);
 

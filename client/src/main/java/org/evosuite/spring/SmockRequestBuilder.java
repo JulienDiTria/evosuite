@@ -28,12 +28,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Set;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
+import org.evosuite.testcase.statements.AssignmentStatement;
 import org.evosuite.testcase.statements.ConstructorStatement;
 import org.evosuite.testcase.statements.MethodStatement;
+import org.evosuite.testcase.variable.ArrayIndex;
 import org.evosuite.testcase.variable.ArrayReference;
 import org.evosuite.testcase.variable.ConstantValue;
 import org.evosuite.testcase.variable.VariableReference;
@@ -44,8 +45,6 @@ import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -182,6 +181,15 @@ public class SmockRequestBuilder {
             ConstantValue paramName = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getName());
             ConstantValue paramValue = new ConstantValue(tc, GenericClassFactory.get(String.class), param.getValue());
 
+            // put the param value into a new string array
+            ArrayStatement arrayStmt = new ArrayStatement(tc, String[].class, 1);
+            tc.addStatement(arrayStmt);
+            ArrayReference arrayRef = (ArrayReference) arrayStmt.getReturnValue();
+            ArrayIndex arrayIndex = new ArrayIndex(tc, arrayRef, 0);
+            AssignmentStatement assignmentStatement = new AssignmentStatement(tc, arrayIndex, paramValue);
+            tc.addStatement(assignmentStatement);
+
+
             // create the param method on the request builder
             Method method;
             try {
@@ -189,9 +197,9 @@ public class SmockRequestBuilder {
             } catch (NoSuchMethodException e) {
                   throw new RuntimeException(e);
             }
-            GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
+            GenericMethod genericMethod = new GenericMethod(method, SmockRequestBuilder.class);
             VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-            MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, paramValue), retVal);
+            MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, arrayRef), retVal);
             tc.addStatement(statement);
       }
 }
