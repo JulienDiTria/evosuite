@@ -47,6 +47,8 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
+import static org.evosuite.spring.SpringSetup.getClassForObject;
+
 public class RequestMappingHandlerMapping {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -59,26 +61,6 @@ public class RequestMappingHandlerMapping {
     private final StringValueResolver embeddedValueResolver = null;
 
     private RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
-
-    /**
-     * Get the class for an object.
-     *
-     * @param object the object for which to find the class
-     * @return the class of the object
-     */
-    public static Class<?> getClassForObject(Object object) {
-        Class<?> clazz;
-        try {
-            clazz = (object instanceof String ? Class.forName((String) object) : object.getClass());
-        } catch (ClassNotFoundException e) {
-            clazz = null;
-            logger.error("Class not found for: {}", object);
-        }
-        if (clazz == Class.class) {
-            clazz = getClassForObject(((Class<?>) object).getName());
-        }
-        return clazz;
-    }
 
     //region create registry of handler methods
     public void processCandidateController(Object controller) {
