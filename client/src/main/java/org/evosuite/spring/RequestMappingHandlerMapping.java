@@ -43,7 +43,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringValueResolver;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.cors.CorsUtils;
-import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -52,7 +51,7 @@ public class RequestMappingHandlerMapping {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final AbstractMappingRegistry<RequestMappingInfo> registry = new AbstractMappingRegistry<>();
+    private final MappingRegistry registry = new MappingRegistry();
 
     private final Map<String, Predicate<Class<?>>> pathPrefixes = new LinkedHashMap<>();
 
@@ -67,7 +66,7 @@ public class RequestMappingHandlerMapping {
      * @param object the object for which to find the class
      * @return the class of the object
      */
-    private static Class<?> getClassForObject(Object object) {
+    public static Class<?> getClassForObject(Object object) {
         Class<?> clazz;
         try {
             clazz = (object instanceof String ? Class.forName((String) object) : object.getClass());
@@ -104,7 +103,7 @@ public class RequestMappingHandlerMapping {
     /**
      * Detects handler methods at initialization.
      *
-     * @param handler the full classname of a handler or a handler instance
+     * @param handlerType the full classname of a handler or a handler instance
      */
     private void detectHandlerMethods(Class<?> handlerType) {
         if (handlerType != null) {
@@ -215,17 +214,17 @@ public class RequestMappingHandlerMapping {
 
     //region get the handler for a request
     public SmockHandlerExecutionChain getHandler(SmockRequest request) {
-
+        return null;
     }
 
     /**
      * Look up a handler method for the given request.
      */
-    private HandlerMethod getHandlerInternal(SmockRequest request) throws Exception {
-        String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
-        HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
-        return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
-    }
+//    private HandlerMethod getHandlerInternal(SmockRequest request) throws Exception {
+//        String lookupPath = getUrlPathHelper().getLookupPathForRequest(request);
+//        HandlerMethod handlerMethod = lookupHandlerMethod(lookupPath, request);
+//        return (handlerMethod != null ? handlerMethod.createWithResolvedBean() : null);
+//    }
 
     /**
      * Look up the best-matching handler method for the current request.
@@ -243,35 +242,36 @@ public class RequestMappingHandlerMapping {
         }
         if (matches.isEmpty()) {
             // No choice but to go through all mappings...
-            addMatchingMappings(this.registry.getMappings(), matches, request);
+            addMatchingMappings(this.registry.getMappings(), matches);
         }
 
-        if (!matches.isEmpty()) {
-            Comparator<AbstractHandlerMethodMapping.Match> comparator =
-                new AbstractHandlerMethodMapping.MatchComparator(getMappingComparator(request));
-            matches.sort(comparator);
-            AbstractHandlerMethodMapping.Match bestMatch = matches.get(0);
-            if (matches.size() > 1) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(matches.size() + " matching mappings: " + matches);
-                }
-                if (CorsUtils.isPreFlightRequest(request)) {
-                    return PREFLIGHT_AMBIGUOUS_MATCH;
-                }
-                AbstractHandlerMethodMapping.Match secondBestMatch = matches.get(1);
-                if (comparator.compare(bestMatch, secondBestMatch) == 0) {
-                    Method m1 = bestMatch.handlerMethod.getMethod();
-                    Method m2 = secondBestMatch.handlerMethod.getMethod();
-                    String uri = request.getRequestURI();
-                    throw new IllegalStateException(
-                        "Ambiguous handler methods mapped for '" + uri + "': {" + m1 + ", " + m2 + "}");
-                }
-            }
-            handleMatch(bestMatch.mapping, lookupPath, request);
-            return bestMatch.handlerMethod;
-        } else {
-            return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
-        }
+//        if (!matches.isEmpty()) {
+//            Comparator<AbstractHandlerMethodMapping.Match> comparator =
+//                new AbstractHandlerMethodMapping.MatchComparator(getMappingComparator(request));
+//            matches.sort(comparator);
+//            AbstractHandlerMethodMapping.Match bestMatch = matches.get(0);
+//            if (matches.size() > 1) {
+//                if (logger.isTraceEnabled()) {
+//                    logger.trace(matches.size() + " matching mappings: " + matches);
+//                }
+//                if (CorsUtils.isPreFlightRequest(request)) {
+//                    return PREFLIGHT_AMBIGUOUS_MATCH;
+//                }
+//                AbstractHandlerMethodMapping.Match secondBestMatch = matches.get(1);
+//                if (comparator.compare(bestMatch, secondBestMatch) == 0) {
+//                    Method m1 = bestMatch.handlerMethod.getMethod();
+//                    Method m2 = secondBestMatch.handlerMethod.getMethod();
+//                    String uri = request.getRequestURI();
+//                    throw new IllegalStateException(
+//                        "Ambiguous handler methods mapped for '" + uri + "': {" + m1 + ", " + m2 + "}");
+//                }
+//            }
+//            handleMatch(bestMatch.mapping, lookupPath, request);
+//            return bestMatch.handlerMethod;
+//        } else {
+//            return handleNoMatch(this.mappingRegistry.getMappings().keySet(), lookupPath, request);
+//        }
+        return null;
     }
 
     private void addMatchingMappings(Collection<RequestMappingInfo> mappings, List<RequestMappingInfo> matches) {

@@ -22,21 +22,21 @@
 
 package org.evosuite.spring;
 
+import java.lang.invoke.MethodHandles;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.web.servlet.HandlerAdapter;
-import org.springframework.web.servlet.HandlerExecutionChain;
-import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 public class SmockDispatcherServlet {
 
-    public void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        HandlerExecutionChain mappedHandler = null;
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    public void doDispatch(SmockRequest request, SmockResponse response) throws Exception {
+        SmockHandlerExecutionChain mappedHandler = null;
         ModelAndView mv = null;
 
         // Determine handler for the current request.
@@ -47,10 +47,10 @@ public class SmockDispatcherServlet {
         }
 
         // Determine handler adapter for the current request.
-        HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+        SmockHandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
         // Actually invoke the handler.
-        mv = ha.handle(request, response, mappedHandler.getHandler());
+//        mv = ha.handle(request, response, mappedHandler.getHandler());
 
         // If the view is null, we assume that the request is handled within the handler itself.
         applyDefaultViewName(request, mv);
@@ -63,7 +63,7 @@ public class SmockDispatcherServlet {
      * @return the HandlerExecutionChain, or {@code null} if no handler could be found
      */
     @Nullable
-    protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+    protected SmockHandlerExecutionChain getHandler(SmockRequest request) throws Exception {
         RequestMappingHandlerMapping mapping = SpringSetup.getRequestMappingHandlerMapping();
         return mapping.getHandler(request);
     }
@@ -74,17 +74,9 @@ public class SmockDispatcherServlet {
      * @param response current HTTP response
      * @throws Exception if preparing the response failed
      */
-    protected void noHandlerFound(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (pageNotFoundLogger.isWarnEnabled()) {
-            pageNotFoundLogger.warn("No mapping for " + request.getMethod() + " " + getRequestUri(request));
-        }
-        if (this.throwExceptionIfNoHandlerFound) {
-            throw new NoHandlerFoundException(request.getMethod(), getRequestUri(request),
-                new ServletServerHttpRequest(request).getHeaders());
-        }
-        else {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-        }
+    protected void noHandlerFound(SmockRequest request, SmockResponse response) throws Exception {
+//        logger.warn("No mapping for " + request.getMethod() + " " + getRequestUri(request));
+//        response.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     /**
@@ -92,14 +84,14 @@ public class SmockDispatcherServlet {
      * @param handler the handler object to find an adapter for
      * @throws ServletException if no HandlerAdapter can be found for the handler. This is a fatal error.
      */
-    protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
-        if (this.handlerAdapters != null) {
-            for (HandlerAdapter adapter : this.handlerAdapters) {
-                if (adapter.supports(handler)) {
-                    return adapter;
-                }
-            }
-        }
+    protected SmockHandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
+//        if (this.handlerAdapters != null) {
+//            for (SmockHandlerAdapter adapter : this.handlerAdapters) {
+//                if (adapter.supports(handler)) {
+//                    return adapter;
+//                }
+//            }
+//        }
         throw new ServletException("No adapter for handler [" + handler +
             "]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
     }
@@ -107,7 +99,7 @@ public class SmockDispatcherServlet {
     /**
      * Do we need view name translation?
      */
-    private void applyDefaultViewName(HttpServletRequest request, @Nullable ModelAndView mv) throws Exception {
+    private void applyDefaultViewName(SmockRequest request, @Nullable ModelAndView mv) throws Exception {
         if (mv != null && !mv.hasView()) {
             String defaultViewName = getDefaultViewName(request);
             if (defaultViewName != null) {
@@ -123,7 +115,8 @@ public class SmockDispatcherServlet {
      * @throws Exception if view name translation failed
      */
     @Nullable
-    protected String getDefaultViewName(HttpServletRequest request) throws Exception {
-        return (this.viewNameTranslator != null ? this.viewNameTranslator.getViewName(request) : null);
+    protected String getDefaultViewName(SmockRequest request) throws Exception {
+        return null;
+//        return (this.viewNameTranslator != null ? this.viewNameTranslator.getViewName(request) : null);
     }
 }

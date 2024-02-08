@@ -48,6 +48,10 @@ public abstract class AbstractMappingRegistry<T> {
         }
     }
 
+    public List<T> getMappings(){
+        return new ArrayList<>(this.mappingLookup.keySet());
+    }
+
     /**
      * Return matches for the given URL path. Not thread-safe.
      * @see #acquireReadLock()
@@ -66,9 +70,7 @@ public abstract class AbstractMappingRegistry<T> {
     /**
      * Get the URL path patterns associated with this {@link RequestMappingInfo}.
      */
-    protected Set<String> getMappingPathPatterns(T info) {
-        return info.getPatternsCondition().getPatterns();
-    }
+    protected abstract Set<String> getMappingPathPatterns(T info);
 
     @Override
     public String toString() {

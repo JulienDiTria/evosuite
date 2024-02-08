@@ -29,4 +29,8 @@ public class SmockHandlerExecutionChain {
     public SmockHandlerExecutionChain(Object handler) {
         this.handler = handler;
     }
+
+    public Object getHandler() {
+        return handler;
+    }
 }
