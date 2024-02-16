@@ -1,20 +1,12 @@
 package org.evosuite.spring;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-import org.apache.commons.io.FileUtils;
 import org.evosuite.TestGenerationContext;
-import org.evosuite.instrumentation.InstrumentingClassLoader;
-import org.evosuite.instrumentation.NonInstrumentingClassLoader;
-import org.evosuite.utils.FileIOUtils;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
@@ -22,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class SpringSetup {
 
@@ -130,7 +120,7 @@ public class SpringSetup {
 
         // move file into classpath
         // TODO 16.02.2023 Julien Di Tria
-        //  Find another way to find where to put the file, as this is not a safe way to do it, maybe use the classpath of the CUT
+        //  Find another path where to put the file, as this is not a safe way to do it, maybe use the classpath of the CUT
         File folder =
             new File(TestGenerationContext.getInstance().getClassLoaderForSUT().getClass().getProtectionDomain().getCodeSource().getLocation().getPath(), packagePath);
         folder.mkdirs();
@@ -161,10 +151,9 @@ public class SpringSetup {
         } catch (InitializationError e) {
             throw new RuntimeException(e);
         }
-        instance.springSetupRunner.run(runNotifier);
 
-        Object testInstance = instance.springSetupRunner.testInstance;
-        MockMvc mockMvc = getFieldValue(testInstance, "mockMvc");
+        instance.springSetupRunner.run(runNotifier);
+        MockMvc mockMvc = instance.springSetupRunner.mockMvc;
 
 //        try {
 //            mockMvc.perform(get("/owners")
@@ -176,19 +165,6 @@ public class SpringSetup {
 
         System.out.println("MockMvc: " + mockMvc);
         System.out.println("SpringSetupRunner executed");
-    }
-
-    static <T> T getFieldValue(Object holder, String fieldName) {
-        Field field = null;
-        Object fieldValue = null;
-        try {
-            field = holder.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            fieldValue = field.get(holder);
-            return (T) fieldValue;
-        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

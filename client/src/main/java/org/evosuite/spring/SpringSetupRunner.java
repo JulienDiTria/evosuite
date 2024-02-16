@@ -1,5 +1,6 @@
 package org.evosuite.spring;
 
+import java.lang.reflect.Field;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
@@ -9,12 +10,14 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MockMvc;
 
 public class SpringSetupRunner extends SpringJUnit4ClassRunner {
 
     public Statement statement;
     public FrameworkMethod frameworkMethod;
     public Object testInstance;
+    public MockMvc mockMvc;
 
     /**
      * Construct a new {@code SpringSetupRunner} and initialize a
@@ -63,6 +66,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
                     return createTest();
                 }
             }.run();
+            mockMvc = getFieldValue(testInstance, "mockMvc");
         }
         catch (Throwable ex) {
             return new Fail(ex);
@@ -79,4 +83,17 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         return super.getTestContextManager();
     }
 
+
+    static <T> T getFieldValue(Object holder, String fieldName) {
+        Field field = null;
+        Object fieldValue = null;
+        try {
+            field = holder.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            fieldValue = field.get(holder);
+            return (T) fieldValue;
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
