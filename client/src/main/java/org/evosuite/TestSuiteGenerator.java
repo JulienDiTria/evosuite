@@ -45,6 +45,7 @@ import org.evosuite.seeding.ObjectPoolManager;
 import org.evosuite.setup.DependencyAnalysis;
 import org.evosuite.setup.ExceptionMapGenerator;
 import org.evosuite.setup.TestCluster;
+import org.evosuite.spring.SpringSetup;
 import org.evosuite.statistics.RuntimeVariable;
 import org.evosuite.statistics.StatisticsSender;
 import org.evosuite.strategy.TestGenerationStrategy;
@@ -107,6 +108,9 @@ public class TestSuiteGenerator {
             Throwable t = execResult.getAllThrownExceptions().iterator().next();
             throw t;
         }
+
+        // Run the spring setup
+        SpringSetup.setup(Properties.TARGET_CLASS);
 
         // Analysis has to happen *after* the CUT is loaded since it will cause
         // several other classes to be loaded (including the CUT), but we require

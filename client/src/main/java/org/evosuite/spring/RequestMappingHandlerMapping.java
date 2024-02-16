@@ -28,6 +28,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +64,39 @@ public class RequestMappingHandlerMapping {
 
     private RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
 
+    private final HashMap<Class<?>, Boolean> handlerTypes = new HashMap<>();
+
     //region create registry of handler methods
+
+    public boolean isHandlerType(Object controller) {
+        Class<?> clazz = getClassForObject(controller);
+
+        if (! handlerTypes.containsKey(clazz)) {
+            processCandidateController(clazz);
+        }
+        return handlerTypes.get(clazz);
+    }
+
+    /**
+     * Process the candidate controller which consists of
+     * <li>scanning the class for request mapping annotations</li>
+     * <li>registering the handler methods</li>
+     *
+     * @param controller the candidate controller
+     */
     public void processCandidateController(Object controller) {
         Class<?> clazz = getClassForObject(controller);
+
+        if (handlerTypes.containsKey(clazz)) {
+            return;
+        }
+
         if (clazz != null && isHandler(clazz)) {
+            handlerTypes.put(clazz, true);
             detectHandlerMethods(clazz);
+        }
+        else {
+            handlerTypes.put(clazz, false);
         }
     }
 

@@ -14,7 +14,7 @@ public class TestSpringSetup {
 
     @Test
     public void test1() throws Exception {
-        SpringSetup.setup(OwnerControllerTest.class);
+        SpringSetup.setup(OwnerController.class.getName());
         System.out.println("all good");
     }
 }
