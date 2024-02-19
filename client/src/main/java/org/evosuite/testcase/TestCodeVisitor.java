@@ -77,9 +77,6 @@ public class TestCodeVisitor extends TestVisitor {
     /**
      * Dictionaries for naming information
      */
-    /**
-     * Dictionaries for naming information
-     */
     protected Map<VariableReference, String> methodNames = new HashMap<>();
     protected Map<VariableReference, String> argumentNames = new HashMap<>();
 

@@ -12,8 +12,11 @@ import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 public class SpringSetup {
 
@@ -44,7 +47,6 @@ public class SpringSetup {
     public static RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
         return instance.requestMappingHandlerMapping;
     }
-
 
     public static void setup(String className) {
         processCandidateController(className);
@@ -142,7 +144,7 @@ public class SpringSetup {
      *
      * @param controller the controller for which to setup the Spring context
      */
-    public static void setupSpringRunner(Object controller) {
+    private static void setupSpringRunner(Object controller) {
         Class<?> clazz = getClassForObject(controller);
         RunNotifier runNotifier = new RunNotifier();
 
@@ -154,17 +156,22 @@ public class SpringSetup {
 
         instance.springSetupRunner.run(runNotifier);
         MockMvc mockMvc = instance.springSetupRunner.mockMvc;
+        assert (mockMvc != null);
+        System.out.println("MockMvc: " + mockMvc);
 
 //        try {
-//            mockMvc.perform(get("/owners")
-//                    .param("lastName", "Smith"))
+//            RequestBuilder requestBuilder = get("/owners").param("lastName", "Smith");
+//            mockMvc.perform(requestBuilder)
 //                .andExpect(status().isOk());
 //        } catch (Exception e) {
 //            throw new RuntimeException(e);
 //        }
 
-        System.out.println("MockMvc: " + mockMvc);
         System.out.println("SpringSetupRunner executed");
+    }
+    
+    public static MockMvc getMockMvc() {
+        return instance.springSetupRunner.mockMvc;
     }
 
     /**

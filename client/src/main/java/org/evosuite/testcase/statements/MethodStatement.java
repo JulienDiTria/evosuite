@@ -213,89 +213,132 @@ public class MethodStatement extends EntityWithParametersStatement {
             throws InvocationTargetException, IllegalArgumentException,
             IllegalAccessException, InstantiationException {
         logger.trace("Executing method " + method.getName());
-        final Object[] inputs = new Object[parameters.size()];
         Throwable exceptionThrown = null;
 
         try {
-            return super.exceptionHandler(new Executer() {
-
-                @Override
-                public void execute() throws InvocationTargetException,
-                        IllegalArgumentException, IllegalAccessException,
-                        InstantiationException, CodeUnderTestException {
-                    Object callee_object;
-                    try {
-                        java.lang.reflect.Type[] parameterTypes = method.getParameterTypes();
-                        for (int i = 0; i < parameters.size(); i++) {
-                            VariableReference parameterVar = parameters.get(i);
-                            inputs[i] = parameterVar.getObject(scope);
-                            if (inputs[i] == null && method.getMethod().getParameterTypes()[i].isPrimitive()) {
-                                throw new CodeUnderTestException(new NullPointerException());
-                            }
-                            if (inputs[i] != null && !TypeUtils.isAssignable(inputs[i].getClass(), parameterTypes[i])) {
-                                // TODO: This used to be a check of the declared type, but the problem is that
-                                //       Generic types are not updated during execution, so this may fail:
-                                //!parameterVar.isAssignableTo(parameterTypes[i])) {
-                                throw new CodeUnderTestException(
-                                        new UncompilableCodeException("Cannot assign " + parameterVar.getVariableClass().getName() + " to " + parameterTypes[i]));
-                            }
-                        }
-
-                        callee_object = method.isStatic() ? null
-                                : callee.getObject(scope);
-                        if (!method.isStatic() && callee_object == null) {
-                            throw new CodeUnderTestException(new NullPointerException());
-                        }
-                    } catch (CodeUnderTestException e) {
-                        throw e;
-                        // throw CodeUnderTestException.throwException(e.getCause());
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                        throw new EvosuiteError(e);
-                    }
-
-                    Object ret = method.getMethod().invoke(callee_object, inputs);
-                    // Try exact return type
-                    /*
-                     * TODO: Sometimes we do want to cast an Object to String etc...
-                     */
-                    if (method.getReturnType() instanceof Class<?>) {
-                        Class<?> returnClass = (Class<?>) method.getReturnType();
-
-                        if (!returnClass.isPrimitive()
-                                && ret != null
-                                && !returnClass.isAssignableFrom(ret.getClass())) {
-                            throw new CodeUnderTestException(new ClassCastException(
-                                    "Cannot assign " + method.getReturnType()
-                                            + " to variable of type " + retval.getType()));
-                        }
-                    }
-
-
-                    try {
-                        retval.setObject(scope, ret);
-                    } catch (CodeUnderTestException e) {
-                        throw e;
-                        // throw CodeUnderTestException.throwException(e);
-                    } catch (Throwable e) {
-                        throw new EvosuiteError(e);
-                    }
-                }
-
-                @Override
-                public Set<Class<? extends Throwable>> throwableExceptions() {
-                    Set<Class<? extends Throwable>> t = new LinkedHashSet<>();
-                    t.add(InvocationTargetException.class);
-                    return t;
-                }
-            });
-
+            return super.exceptionHandler(new MethodStatementExecuter(null, null, scope));
         } catch (InvocationTargetException e) {
             exceptionThrown = e.getCause();
             logger.debug("Exception thrown in method {}: {}", method.getName(),
                     exceptionThrown);
         }
         return exceptionThrown;
+    }
+
+    protected class MethodStatementExecuter extends Executer {
+
+        Object callee_object;
+        Object[] input_objects;
+        Scope scope;
+
+        public MethodStatementExecuter(Object callee_object, Object[] input_objects, Scope scope) {
+            super();
+            this.callee_object = callee_object;
+            this.input_objects = input_objects;
+            this.scope = scope;
+        }
+
+        @Override
+        public void execute() throws InvocationTargetException, IllegalArgumentException, IllegalAccessException, InstantiationException,
+            CodeUnderTestException {
+
+            try {
+                computeInputs();
+                computeCallee();
+            } catch (CodeUnderTestException e) {
+                throw e;
+                // throw CodeUnderTestException.throwException(e.getCause());
+            } catch (Throwable e) {
+                e.printStackTrace();
+                throw new EvosuiteError(e);
+            }
+
+            Object ret = method.getMethod().invoke(callee_object, input_objects);
+            computeReturnValue(ret);
+        }
+
+        @Override
+        public Set<Class<? extends Throwable>> throwableExceptions() {
+            Set<Class<? extends Throwable>> t = new LinkedHashSet<>();
+            t.add(InvocationTargetException.class);
+            return t;
+        }
+
+        private void computeInputs() throws CodeUnderTestException {
+            // if inputs are already set, return
+            if (input_objects != null) {
+                return;
+            }
+
+            // else, compute inputs
+            input_objects = new Object[parameters.size()];
+            java.lang.reflect.Type[] parameterTypes = method.getParameterTypes();
+            for (int i = 0; i < parameters.size(); i++) {
+                computeInput(i, parameterTypes);
+            }
+        }
+
+        private void computeInput(int i, java.lang.reflect.Type[] parameterTypes) throws CodeUnderTestException {
+            // if input i is already set, return
+            if (input_objects[i] != null) {
+                return;
+            }
+
+            // else, compute input i
+            VariableReference parameterVar = parameters.get(i);
+            input_objects[i] = parameterVar.getObject(scope);
+            if (input_objects[i] == null && method.getMethod().getParameterTypes()[i].isPrimitive()) {
+                throw new CodeUnderTestException(new NullPointerException());
+            }
+            if (input_objects[i] != null && !TypeUtils.isAssignable(input_objects[i].getClass(), parameterTypes[i])) {
+                // TODO: This used to be a check of the declared type, but the problem is that
+                //       Generic types are not updated during execution, so this may fail:
+                //!parameterVar.isAssignableTo(parameterTypes[i])) {
+                throw new CodeUnderTestException(
+                    new UncompilableCodeException("Cannot assign " + parameterVar.getVariableClass().getName() + " to " + parameterTypes[i]));
+            }
+        }
+
+        private void computeCallee() throws CodeUnderTestException {
+            // if callee object is already set, return
+            if (callee_object != null) {
+                return;
+            }
+
+            // if method is static, set callee to null, else get the value from the scope
+            callee_object = method.isStatic() ? null : callee.getObject(scope);
+            if (!method.isStatic() && callee_object == null) {
+                throw new CodeUnderTestException(new NullPointerException());
+            }
+        }
+
+        private void computeReturnValue(Object ret) throws CodeUnderTestException {
+            // Try exact return type
+            /*
+             * TODO: Sometimes we do want to cast an Object to String etc...
+             */
+            if (method.getReturnType() instanceof Class<?>) {
+                Class<?> returnClass = (Class<?>) method.getReturnType();
+
+                if (!returnClass.isPrimitive()
+                    && ret != null
+                    && !returnClass.isAssignableFrom(ret.getClass())) {
+                    throw new CodeUnderTestException(new ClassCastException(
+                        "Cannot assign " + method.getReturnType()
+                            + " to variable of type " + retval.getType()));
+                }
+            }
+
+
+            try {
+                retval.setObject(scope, ret);
+            } catch (CodeUnderTestException e) {
+                throw e;
+                // throw CodeUnderTestException.throwException(e);
+            } catch (Throwable e) {
+                throw new EvosuiteError(e);
+            }
+        }
     }
 
     /**

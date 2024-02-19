@@ -29,7 +29,7 @@ public class SpringTestFactory {
     return tc;
   }
 
-  private static VariableReference addRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
+  public static VariableReference addRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
     logger.debug("addRequestBuilder");
     VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(tc, requestMappingInfo);
     SmockRequestBuilder.addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);

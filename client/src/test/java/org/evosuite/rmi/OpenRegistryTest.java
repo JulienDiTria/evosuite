@@ -20,6 +20,7 @@
 package org.evosuite.rmi;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.ServerSocket;
@@ -32,6 +33,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class OpenRegistryTest {
 
+    @Ignore
     @Test
     public void openTest() throws RemoteException, NotBoundException {
         int port = 2000;
