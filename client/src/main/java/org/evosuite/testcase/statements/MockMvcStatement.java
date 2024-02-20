@@ -48,25 +48,26 @@ public class MockMvcStatement extends MethodStatement {
     public Throwable execute(final Scope scope, PrintStream out)
         throws InvocationTargetException, IllegalArgumentException,
         IllegalAccessException, InstantiationException {
-        logger.trace("Executing method " + method.getName());
+        logger.trace("Executing method {}", method.getName());
         Throwable exceptionThrown = null;
 
         try {
             return super.exceptionHandler(new MethodStatementExecuter(mockMvc, null, scope));
         } catch (InvocationTargetException e) {
             exceptionThrown = e.getCause();
-            logger.debug("Exception thrown in method {}: {}", method.getName(),
-                exceptionThrown);
+            logger.debug("Exception thrown in method {} : {}", method.getName(), exceptionThrown);
         }
         return exceptionThrown;
     }
 
     /**
      * {@inheritDoc}
+     * <p>
+     * MockMvcStatement is valid if the mockMvc object is not null, the return value and all parameters have a valid positions
      */
     @Override
     public boolean isValid() {
-
+        assert (mockMvc != null);
         retval.getStPosition();
         for (VariableReference v : parameters) {
             v.getStPosition();

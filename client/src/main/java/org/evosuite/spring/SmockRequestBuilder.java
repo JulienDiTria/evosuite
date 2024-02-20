@@ -175,7 +175,7 @@ public class SmockRequestBuilder {
             GenericMethod genericMethod = new GenericMethod(method, MockMvcRequestBuilders.class);
             VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
             Statement statement = new MethodStatement(tc, genericMethod, null, List.of(urlValue, arrayRef), retVal);
-            
+
             // add the statement to the test case
             VariableReference requestBuilder = tc.addStatement(statement);
 

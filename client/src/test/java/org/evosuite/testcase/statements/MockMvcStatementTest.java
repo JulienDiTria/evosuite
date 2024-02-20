@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
 import org.evosuite.spring.SmockRequestBuilder;
+import org.evosuite.spring.SmockResultActions;
 import org.evosuite.spring.SpringSetup;
 import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
@@ -44,9 +45,11 @@ public class MockMvcStatementTest {
 
         List<VariableReference> parameters = new ArrayList<>();
         parameters.add(requestBuilder);
-        VariableReference retVal = new VariableReferenceImpl(tc, ResultActions.class);
-        MockMvcStatement statement = MockMvcStatement.builder(mockMvc, tc, parameters, retVal);
+        VariableReference resultActions = new VariableReferenceImpl(tc, ResultActions.class);
+        MockMvcStatement statement = MockMvcStatement.builder(mockMvc, tc, parameters, resultActions);
         tc.addStatement(statement);
+
+        VariableReference mvcResult = SmockResultActions.smockAndReturn(tc, resultActions);
 
         TestChromosome c = new TestChromosome();
         c.setTestCase(tc);
@@ -55,6 +58,13 @@ public class MockMvcStatementTest {
         System.out.println("test executed in " + executionResult.getExecutionTime() + "ms");
         System.err.println("exception: " + executionResult.getAllThrownExceptions());
         System.out.println(tc.toCode());
+
+        /*
+        Object[] objectArray0 = new Object[1];
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder0 = MockMvcRequestBuilders.get("/owners", objectArray0);
+        ResultActions resultActions0 = mockMvc0.perform(mockHttpServletRequestBuilder0);
+        resultActions0.andReturn();
+         */
     }
 
 }

@@ -53,10 +53,10 @@ public class SpringTestFactory {
     VariableReference smockMvc = SmockMvc.createSmockMvc(tc);
 
     // call perform and get the result actions
-    VariableReference resultActions = SmockMvc.perform(tc, smockMvc, requestBuilder);
+    VariableReference resultActions = SmockMvc.smockPerform(tc, smockMvc, requestBuilder);
 
     // return the mvcResult from the result actions
-    VariableReference mvcResult = SmockResultActions.andReturn(tc, resultActions);
+    VariableReference mvcResult = SmockResultActions.smockAndReturn(tc, resultActions);
     return mvcResult;
   }
 

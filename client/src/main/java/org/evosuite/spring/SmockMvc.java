@@ -47,7 +47,7 @@ public class SmockMvc {
    * @return the result actions wrapping around the result
    * @throws Exception
    */
-  public SmockResultActions perform(SmockRequestBuilder requestBuilder) throws Exception {
+  public SmockResultActions smockPerform(SmockRequestBuilder requestBuilder) throws Exception {
 
     // build the request
     SmockRequest request = requestBuilder.buildRequest();
@@ -98,11 +98,11 @@ public class SmockMvc {
    * @param requestBuilder the request builder that contains the request to be performed
    * @return the result actions wrapping around the result
    */
-  public static VariableReference perform(TestCase tc, VariableReference smockMvc, VariableReference requestBuilder){
+  public static VariableReference smockPerform(TestCase tc, VariableReference smockMvc, VariableReference requestBuilder){
     // get the "perform" method of the smockMvc by reflection
     Method method = null;
     try {
-      method = SmockMvc.class.getMethod("perform", SmockRequestBuilder.class);
+      method = SmockMvc.class.getMethod("smockPerform", SmockRequestBuilder.class);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
