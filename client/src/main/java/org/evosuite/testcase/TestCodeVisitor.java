@@ -1797,6 +1797,16 @@ public class TestCodeVisitor extends TestVisitor {
         addAssertions(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitDeclarationStatement(DeclarationStatement statement) {
+        VariableReference retval = statement.getReturnValue();
+
+        testCode += getClassName(retval) + " " + getVariableName(retval) + ";" + NEWLINE;
+    }
+
     /*
      * (non-Javadoc)
      *

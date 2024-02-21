@@ -24,6 +24,7 @@ import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionObserver;
 import org.evosuite.testcase.execution.ExecutionTracer;
 import org.evosuite.testcase.execution.Scope;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.FieldStatement;
 import org.evosuite.testcase.statements.FunctionalMockStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
@@ -110,6 +111,10 @@ public abstract class AssertionTraceObserver<T extends OutputTraceEntry> extends
 
         // No need to assert anything about values just assigned
         if (statement.isAssignmentStatement())
+            return;
+
+        // We don't need assertions on declaration
+        if (statement instanceof DeclarationStatement)
             return;
 
         try {

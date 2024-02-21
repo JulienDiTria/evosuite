@@ -512,6 +512,14 @@ public class ValueMinimizer extends TestVisitor {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitDeclarationStatement(DeclarationStatement statement) {
+        // no operation
+    }
+
     /* (non-Javadoc)
      * @see org.evosuite.testcase.TestVisitor#visitNullStatement(org.evosuite.testcase.NullStatement)
      */

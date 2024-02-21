@@ -97,6 +97,15 @@ public abstract class TestVisitor {
 
     /**
      * <p>
+     * visit DeclarationStatement
+     * </p>
+     *
+     * @param statement a {@link org.evosuite.testcase.statements.DeclarationStatement} object.
+     */
+    public abstract void visitDeclarationStatement(DeclarationStatement statement);
+
+    /**
+     * <p>
      * visitNullStatement
      * </p>
      *
@@ -135,6 +144,8 @@ public abstract class TestVisitor {
             visitMethodStatement((MethodStatement) statement);
         else if (statement instanceof AssignmentStatement)
             visitAssignmentStatement((AssignmentStatement) statement);
+        else if (statement instanceof DeclarationStatement)
+            visitDeclarationStatement((DeclarationStatement) statement);
         else if (statement instanceof ArrayStatement)
             visitArrayStatement((ArrayStatement) statement);
         else if (statement instanceof NullStatement)

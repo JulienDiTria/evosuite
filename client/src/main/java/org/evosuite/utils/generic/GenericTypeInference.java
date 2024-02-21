@@ -364,7 +364,14 @@ public class GenericTypeInference extends TestVisitor {
     @Override
     public void visitAssignmentStatement(AssignmentStatement statement) {
         addVariable(statement);
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitDeclarationStatement(DeclarationStatement statement) {
+        addVariable(statement);
     }
 
     /* (non-Javadoc)

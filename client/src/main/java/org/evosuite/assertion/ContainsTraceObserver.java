@@ -23,6 +23,7 @@ import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.AssignmentStatement;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.MethodStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
 import org.evosuite.testcase.statements.Statement;
@@ -52,6 +53,8 @@ public class ContainsTraceObserver extends AssertionTraceObserver<ContainsTraceE
                 return;
 
             if (statement instanceof AssignmentStatement)
+                return;
+            if (statement instanceof DeclarationStatement)
                 return;
             if (statement instanceof PrimitiveStatement<?>)
                 return;

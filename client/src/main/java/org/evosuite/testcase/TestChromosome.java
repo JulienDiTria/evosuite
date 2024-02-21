@@ -33,6 +33,7 @@ import org.evosuite.symbolic.ConcolicMutation;
 import org.evosuite.symbolic.dse.ConcolicExecutorImpl;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.localsearch.TestCaseLocalSearch;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.FunctionalMockStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
 import org.evosuite.testcase.statements.Statement;
@@ -493,6 +494,10 @@ public final class TestChromosome extends AbstractTestChromosome<TestChromosome>
                     Statement statement = test.getStatement(position);
 
                     if (statement.isReflectionStatement())
+                        continue;
+
+                    // no mutation on Declaration Statement
+                    if (statement instanceof DeclarationStatement)
                         continue;
 
                     int oldDistance = statement.getReturnValue().getDistance();

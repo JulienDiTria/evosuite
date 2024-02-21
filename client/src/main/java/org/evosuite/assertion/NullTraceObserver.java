@@ -23,6 +23,7 @@ import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.ArrayStatement;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.FunctionalMockStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
 import org.evosuite.testcase.statements.Statement;
@@ -64,6 +65,9 @@ public class NullTraceObserver extends AssertionTraceObserver<NullTraceEntry> {
                     || var.isEnum()
                     || currentTest.getStatement(var.getStPosition()) instanceof PrimitiveStatement
                     || currentTest.getStatement(var.getStPosition()).isAssignmentStatement())
+                return;
+
+            if (statement instanceof DeclarationStatement)
                 return;
 
             if (var.getType() != null && var.getType().equals(Void.class)) {

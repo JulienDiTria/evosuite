@@ -84,6 +84,10 @@ public class ArrayTraceObserver extends AssertionTraceObserver<ArrayTraceEntry> 
             if (statement instanceof AssignmentStatement)
                 return;
 
+            // We don't need assertions on declaration
+            if (statement instanceof DeclarationStatement)
+                return;
+
             // We don't need assertions on array declarations
             if (statement instanceof ArrayStatement)
                 return;

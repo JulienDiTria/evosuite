@@ -22,6 +22,7 @@ package org.evosuite.assertion;
 import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.VariableReference;
 
@@ -54,6 +55,8 @@ public class PrimitiveFieldTraceObserver extends
                 }
             }
 
+            if (statement instanceof DeclarationStatement)
+                return;
 
             Object object = var.getObject(scope);
             int position = statement.getPosition();

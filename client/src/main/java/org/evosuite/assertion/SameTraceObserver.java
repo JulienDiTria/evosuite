@@ -26,6 +26,7 @@ import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.ConstructorStatement;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.VariableReference;
@@ -50,6 +51,8 @@ public class SameTraceObserver extends AssertionTraceObserver<SameTraceEntry> {
     protected void visit(Statement statement, Scope scope, VariableReference var) {
         // TODO: Only MethodStatement?
         if (statement.isAssignmentStatement())
+            return;
+        if (statement instanceof DeclarationStatement)
             return;
         if (statement instanceof PrimitiveStatement<?>)
             return;

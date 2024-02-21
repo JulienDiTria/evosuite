@@ -23,6 +23,7 @@ import org.evosuite.Properties;
 import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.FunctionalMockStatement;
 import org.evosuite.testcase.statements.MethodStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
@@ -63,6 +64,9 @@ public class PrimitiveTraceObserver extends AssertionTraceObserver<PrimitiveTrac
     @Override
     protected void visit(Statement statement, Scope scope, VariableReference var) {
         if (statement.isAssignmentStatement())
+            return;
+
+        if (statement instanceof DeclarationStatement)
             return;
 
         logger.debug("Checking primitive " + var);

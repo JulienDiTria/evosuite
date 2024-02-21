@@ -8,30 +8,53 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.evosuite.testcase.TestCase;
+import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.utils.generic.GenericAccessibleObject;
 
 public class DeclarationStatement extends AbstractStatement {
 
-    protected DeclarationStatement(TestCase tc, VariableReference retval) throws IllegalArgumentException {
+    private transient Object value = null;
+
+    public DeclarationStatement(TestCase tc, VariableReference retval) throws IllegalArgumentException {
         super(tc, retval);
     }
 
-    protected DeclarationStatement(TestCase tc, Type type) throws IllegalArgumentException {
-        super(tc, type);
+    Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        if (value != null && !retval.isAssignableFrom(value.getClass())) {
+            String message = "trying to assign a value of type '" + value.getClass() + "' to a variable of type '" + retval.getType() + "'";
+            throw new ClassCastException(message);
+        }
+        this.value = value;
     }
 
     @Override
     public Statement copy(TestCase newTestCase, int offset) {
         VariableReference newRetval = retval.copy(newTestCase, offset);
-        return new DeclarationStatement(newTestCase, newRetval);
+        DeclarationStatement statement = new DeclarationStatement(newTestCase, newRetval);
+
+        // same value as the original into the new statement, not a problem as used for injection only
+        statement.setValue(value);
+        return statement;
     }
 
     @Override
     public Throwable execute(Scope scope, PrintStream out)
         throws InvocationTargetException, IllegalArgumentException, IllegalAccessException, InstantiationException {
-        return null;
+        return super.exceptionHandler(new Executer() {
+            @Override
+            public void execute() throws CodeUnderTestException {
+                // no operation, except for setting the value if not null
+                if (value != null) {
+                    retval.setObject(scope, value);
+                }
+            }
+        });
     }
 
     @Override
@@ -58,22 +81,24 @@ public class DeclarationStatement extends AbstractStatement {
 
     @Override
     public void replace(VariableReference oldVar, VariableReference newVar) {
-        // no op
+        if (retval.equals(oldVar)) {
+            retval = newVar;
+        }
     }
 
     @Override
     public boolean same(Statement s) {
-        if (this == s)
+        if (this == s) {
             return true;
-        if (s == null)
+        }
+        if (s == null) {
             return false;
-        if (getClass() != s.getClass())
+        }
+        if (getClass() != s.getClass()) {
             return false;
+        }
 
         DeclarationStatement other = (DeclarationStatement) s;
-        if (retval == null)
-            return other.retval == null;
-        else
-            return retval.same(other.retval);
+        return retval.same(other.retval);
     }
 }

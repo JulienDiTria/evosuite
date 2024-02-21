@@ -136,7 +136,8 @@ public class SymbolicObserver extends ExecutionObserver {
                 before((NullStatement) s, scope);
             } else if (s instanceof AssignmentStatement) {
                 before((AssignmentStatement) s, scope);
-
+            } else if (s instanceof DeclarationStatement) {
+                before((DeclarationStatement) s, scope);
             } else if (s instanceof EnumPrimitiveStatement<?>) {
                 before((EnumPrimitiveStatement<?>) s, scope);
 
@@ -331,6 +332,21 @@ public class SymbolicObserver extends ExecutionObserver {
     private void after(AssignmentStatement s, Scope scope) {
         VariableReference lhs = s.getReturnValue();
         VariableReference rhs = s.getValue();
+
+        ReferenceExpressionPair readResult = read(rhs, scope);
+
+        if (lhs instanceof FieldReference) {
+            writeField((FieldReference) lhs, readResult, scope);
+        } else if (lhs instanceof ArrayIndex) {
+            writeArray((ArrayIndex) lhs, readResult, scope);
+        } else {
+            writeVariable(lhs, readResult);
+        }
+    }
+
+    private void after(DeclarationStatement s, Scope scope) {
+        VariableReference lhs = s.getReturnValue();
+        VariableReference rhs = s.getReturnValue();
 
         ReferenceExpressionPair readResult = read(rhs, scope);
 
@@ -619,6 +635,10 @@ public class SymbolicObserver extends ExecutionObserver {
     }
 
     private void before(AssignmentStatement s, Scope scope) {
+        /* do nothing */
+    }
+
+    private void before(DeclarationStatement s, Scope scope) {
         /* do nothing */
     }
 
@@ -1273,6 +1293,9 @@ public class SymbolicObserver extends ExecutionObserver {
 
             } else if (s instanceof AssignmentStatement) {
                 after((AssignmentStatement) s, scope);
+
+            } else if (s instanceof DeclarationStatement) {
+                after((DeclarationStatement) s, scope);
 
             } else if (s instanceof FieldStatement) {
                 after((FieldStatement) s, scope);

@@ -154,6 +154,8 @@ public class ArrayReference extends VariableReferenceImpl {
      */
     @Override
     public VariableReference copy(TestCase newTestCase, int offset) {
+        assert newTestCase != null;
+
         VariableReference newRef = newTestCase.getStatement(getStPosition() + offset).getReturnValue();
         if (newRef instanceof ArrayReference) {
             ArrayReference otherArray = (ArrayReference) newRef;

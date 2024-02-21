@@ -156,6 +156,8 @@ public class VariableReferenceImpl implements VariableReference {
      */
     @Override
     public VariableReference copy(TestCase newTestCase, int offset) {
+        assert newTestCase != null;
+
         return newTestCase.getStatement(getStPosition() + offset).getReturnValue();
     }
 

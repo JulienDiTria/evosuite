@@ -72,6 +72,8 @@ public class ConstantValue extends VariableReferenceImpl {
      */
     @Override
     public VariableReference copy(TestCase newTestCase, int offset) {
+        assert newTestCase != null;
+
         ConstantValue ret = new ConstantValue(newTestCase, type);
         ret.setValue(value);
         return ret;

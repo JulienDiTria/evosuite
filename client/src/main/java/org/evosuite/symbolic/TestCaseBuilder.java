@@ -28,6 +28,7 @@ import org.evosuite.testcase.variable.ArrayIndex;
 import org.evosuite.testcase.variable.ArrayReference;
 import org.evosuite.testcase.variable.FieldReference;
 import org.evosuite.testcase.variable.VariableReference;
+import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericConstructor;
 import org.evosuite.utils.generic.GenericField;
 import org.evosuite.utils.generic.GenericMethod;
@@ -140,6 +141,22 @@ public class TestCaseBuilder {
         }
         AssignmentStatement stmt = new AssignmentStatement(testCase, fieldReference,
                 value);
+        addStatement(stmt);
+    }
+
+    public void appendDeclaration(VariableReference value) {
+        DeclarationStatement stmt = new DeclarationStatement(testCase, value);
+        addStatement(stmt);
+    }
+
+    /**
+     * Add an injected element into the testcase by wrapping it into a VariableReference and a DeclarationStatement
+     * @param inject the object to inject
+     */
+    public void appendInjection(Object inject) {
+        VariableReference varInject = new VariableReferenceImpl(testCase, inject.getClass());
+        DeclarationStatement stmt = new DeclarationStatement(testCase, varInject);
+        stmt.setValue(inject);
         addStatement(stmt);
     }
 

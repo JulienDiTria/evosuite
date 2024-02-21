@@ -291,6 +291,37 @@ public class TestFactory {
         }
     }
 
+    public VariableReference addDeclaration(TestCase test, VariableReference variableReference, int position, int recursionDepth) throws ConstructionFailedException {
+
+        logger.debug("Adding declaration for {}", variableReference);
+        if (recursionDepth > Properties.MAX_RECURSION) {
+            logger.debug("Max recursion depth reached");
+            throw new ConstructionFailedException("Max recursion depth reached");
+        }
+
+        // create a statement for the declaration
+        Statement st = new DeclarationStatement(test, variableReference);
+        VariableReference ref = test.addStatement(st, position);
+
+        return ref;
+    }
+
+    public VariableReference addInjection(TestCase testCase, Object inject, int position, int recursionDepth) throws ConstructionFailedException {
+
+        logger.debug("Adding injection for {}", inject);
+        if (recursionDepth > Properties.MAX_RECURSION) {
+            logger.debug("Max recursion depth reached");
+            throw new ConstructionFailedException("Max recursion depth reached");
+        }
+
+        // create a statement for the injection
+        VariableReference varInject = new VariableReferenceImpl(testCase, inject.getClass());
+        DeclarationStatement statement = new DeclarationStatement(testCase, varInject);
+        VariableReference ref = testCase.addStatement(statement, position);
+
+        return ref;
+    }
+
     /**
      * Adds the given {@code field} to the {@code test} case at the given {@code position}.
      * <p>
@@ -349,7 +380,7 @@ public class TestFactory {
     }
 
     /**
-     * Add method at given position if max recursion depth has not been reached
+     * Add field assignment at given position if max recursion depth has not been reached
      *
      * @param test
      * @param field
@@ -2193,7 +2224,6 @@ public class TestFactory {
                 logger.warn("Have no target methods to test");
                 return false;
             } else if (o.isConstructor()) {
-
                 GenericConstructor c = (GenericConstructor) o;
                 logger.debug("Adding constructor call {}", c.getName());
                 name = c.getName();

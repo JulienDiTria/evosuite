@@ -426,6 +426,8 @@ public class ArrayIndex extends VariableReferenceImpl {
      */
     @Override
     public VariableReference copy(TestCase newTestCase, int offset) {
+        assert newTestCase != null;
+
         ArrayReference otherArray = (ArrayReference) newTestCase.getStatement(array.getStPosition()
                 + offset).getReturnValue();
         //must be set as we only use this to clone whole testcases

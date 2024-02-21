@@ -24,6 +24,7 @@ import org.evosuite.runtime.mock.EvoSuiteMock;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.ConstructorStatement;
+import org.evosuite.testcase.statements.DeclarationStatement;
 import org.evosuite.testcase.statements.PrimitiveStatement;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.VariableReference;
@@ -55,6 +56,9 @@ public class InspectorTraceObserver extends AssertionTraceObserver<InspectorTrac
             return;
 
         if (statement.isAssignmentStatement() && statement.getReturnValue().isArrayIndex())
+            return;
+
+        if (statement instanceof DeclarationStatement)
             return;
 
         if (statement instanceof ConstructorStatement) {

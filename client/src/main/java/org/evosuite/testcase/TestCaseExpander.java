@@ -51,7 +51,10 @@ public class TestCaseExpander {
                 visitArrayStatement(expandedTest, ((ArrayStatement) statement));
             } else if (statement instanceof AssignmentStatement) {
                 visitAssignmentStatement(expandedTest, ((AssignmentStatement) statement));
+            } else if (statement instanceof DeclarationStatement) {
+                visitDeclarationStatement(expandedTest, ((DeclarationStatement) statement));
             }
+
             currentPosition++;
         }
         return expandedTest;
@@ -221,6 +224,10 @@ public class TestCaseExpander {
         }
         addUnchangedMapping(test, statement.getReturnValue());
 
+    }
+
+    public void visitDeclarationStatement(TestCase test, DeclarationStatement statement) {
+        duplicateStatement(test, statement.getReturnValue());
     }
 
 }

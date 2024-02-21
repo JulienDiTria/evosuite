@@ -331,6 +331,8 @@ public class FieldReference extends VariableReferenceImpl {
      */
     @Override
     public VariableReference copy(TestCase newTestCase, int offset) {
+        assert newTestCase != null;
+
         Type fieldType = field.getFieldType();
         if (source != null) {
             //			VariableReference otherSource = newTestCase.getStatement(source.getStPosition()).getReturnValue();
