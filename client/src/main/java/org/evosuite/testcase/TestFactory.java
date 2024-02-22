@@ -34,6 +34,8 @@ import org.evosuite.seeding.ObjectPoolManager;
 import org.evosuite.setup.TestCluster;
 import org.evosuite.setup.TestClusterGenerator;
 import org.evosuite.setup.TestUsageChecker;
+import org.evosuite.spring.SpringSupport;
+import org.evosuite.spring.SpringTestFactory;
 import org.evosuite.testcase.mutation.RandomInsertion;
 import org.evosuite.testcase.statements.*;
 import org.evosuite.testcase.statements.environment.EnvironmentStatements;
@@ -291,6 +293,17 @@ public class TestFactory {
         }
     }
 
+    /**
+     * Add a Declaration Statement into the test case for the given variable at the given position.
+     * No recursion happens because the variable is already defined.
+     *
+     * @param test the test case in which to insert
+     * @param variableReference the variable to declare (holding the type)
+     * @param position the position at which to insert in the test case
+     * @param recursionDepth the current recursion depth (checked but not increased)
+     * @return a reference to the inserted variable corresponding to the declaration statement
+     * @throws ConstructionFailedException in case of max recursion depth reached
+     */
     public VariableReference addDeclaration(TestCase test, VariableReference variableReference, int position, int recursionDepth) throws ConstructionFailedException {
 
         logger.debug("Adding declaration for {}", variableReference);
@@ -306,6 +319,18 @@ public class TestFactory {
         return ref;
     }
 
+    /**
+     * Similar to {@link TestFactory#addDeclaration}, add a declaration statement for the given object, and also declare the
+     * variable reference and inject the value of the object directly in the declaration statement.
+     * No recursion happens because the object is already defined.
+     *
+     * @param testCase the test case in which to insert the object
+     * @param inject the object to inject in the test case
+     * @param position the position at which to insert in the test case
+     * @param recursionDepth the current recursion depth (checked but not increased)
+     * @return a reference to the inserted variable corresponding to the declaration statement
+     * @throws ConstructionFailedException in case of max recursion depth reached
+     */
     public VariableReference addInjection(TestCase testCase, Object inject, int position, int recursionDepth) throws ConstructionFailedException {
 
         logger.debug("Adding injection for {}", inject);
@@ -317,6 +342,7 @@ public class TestFactory {
         // create a statement for the injection
         VariableReference varInject = new VariableReferenceImpl(testCase, inject.getClass());
         DeclarationStatement statement = new DeclarationStatement(testCase, varInject);
+        statement.setValue(inject);
         VariableReference ref = testCase.addStatement(statement, position);
 
         return ref;
@@ -2208,6 +2234,8 @@ public class TestFactory {
         currentRecursion.clear();
         logger.debug("Inserting random call at position {}", position);
         try {
+
+            // handle reflection call generation
             if (reflectionFactory == null) {
                 final Class<?> targetClass = Properties.getTargetClassAndDontInitialise();
                 reflectionFactory = new ReflectionFactory(targetClass);
@@ -2219,6 +2247,16 @@ public class TestFactory {
                 logger.debug("Going to insert random reflection call");
                 return insertRandomReflectionCall(test, position, 0);
             }
+
+            // handle specific Spring call generation
+            if (SpringSupport.hasController() &&
+                    TimeController.getInstance().getPhasePercentage() >= Properties.SPRING_START_PERCENT &&
+                    (Randomness.nextDouble() < Properties.P_USE_SPRING || TestCluster.getInstance().getNumTestCalls() == 0)) {
+                logger.debug("Going to insert random Spring call");
+                return SpringTestFactory.insertRandomSpringCall(test, position);
+            }
+
+            // handle default call generation: constructor, method or field
             GenericAccessibleObject<?> o = TestCluster.getInstance().getRandomTestCall(test);
             if (o == null) {
                 logger.warn("Have no target methods to test");
@@ -2368,14 +2406,13 @@ public class TestFactory {
      * Inserts one or perhaps multiple random statements into the given {@code test}. Callers
      * have to specify the position of the last valid statement of {@code test} by supplying an
      * appropriate index {@code lastPosition}. After a successful insertion, returns the updated
-     * position of the last valid statement (which is always non-negative), or if there was an error
-     * the constant {@link org.evosuite.testcase.mutation.InsertionStrategy#INSERTION_ERROR
-     * INSERTION_ERROR}.
+     * position of the last valid statement (which is always non-negative), or a negative number
+     * in case of error.
      *
      * @param test         the test case in which to insert
      * @param lastPosition the position of the last valid statement of {@code test} before insertion
-     * @return the position of the last valid statement after insertion, or {@code INSERTION_ERROR}
-     * (see above)
+     * @return the updated position of the last valid statement after insertion, or a negative number
+     * if insertion failed.
      */
     public int insertRandomStatement(TestCase test, int lastPosition) {
         RandomInsertion rs = new RandomInsertion();

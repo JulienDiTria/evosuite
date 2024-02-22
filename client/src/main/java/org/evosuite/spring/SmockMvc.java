@@ -33,6 +33,12 @@ import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericConstructor;
 import org.evosuite.utils.generic.GenericMethod;
+import org.mockito.Mock;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MockMvcBuilder;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
 
 public class SmockMvc {
 
@@ -62,62 +68,70 @@ public class SmockMvc {
     return new SmockResultActions(mvcResult);
   }
 
+  public static MockMvc defaultMockMvc() {
+    return MockMvcBuilders.standaloneSetup().build();
+  }
+
+  /*
+   * ***********************
+   * EVOSUITE helpers
+   * ***********************
+   */
+
   /**
-   * Helper method to create a SmockMvc object in EvoSuite test cases.
+   * Helper method to create a MockMvc object in EvoSuite test cases.
    *
-   * SmockMVC smockMvc = new SmockMvc();
+   * MockMvc mockMvc = SmockMvc.defaultMockMvc();
    *
    * @param tc the test case to add the SmockMvc object to
    * @return the variable reference to the SmockMvc object
    */
-  public static VariableReference createSmockMvc(TestCase tc){
+  public static VariableReference createMockMvc(TestCase tc){
     // get the constructor by reflection
-    Constructor<?> constructor = null;
+    Method method = null;
     try {
-      constructor = SmockMvc.class.getConstructor();
+      method = SmockMvc.class.getMethod("defaultMockMvc");
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
 
     // create the constructor statement
-    GenericConstructor genericConstructor = new GenericConstructor(constructor, SmockMvc.class);
-    ConstructorStatement statement = new ConstructorStatement(tc, genericConstructor, Collections.emptyList());
+    GenericMethod genericMethod = new GenericMethod(method, MockMvc.class);
+    MethodStatement statement = new MethodStatement(tc, genericMethod, null, Collections.emptyList());
 
     // add the statement to the test case
-    VariableReference smockMvc = tc.addStatement(statement);
-    return smockMvc;
+    return tc.addStatement(statement);
   }
 
   /**
    * Helper method to perform a request contained by a request builder and return the ResultActions wrapping around the result.
    *
-   * ResultActions resultActions = smockMvc.perform(requestBuilder);
+   * ResultActions resultActions = mockMvc.perform(requestBuilder);
    *
    * @param tc the test case in which the request is performed
-   * @param smockMvc the SmockMvc object to perform the request
+   * @param mockMvc the SmockMvc object to perform the request
    * @param requestBuilder the request builder that contains the request to be performed
    * @return the result actions wrapping around the result
    */
-  public static VariableReference smockPerform(TestCase tc, VariableReference smockMvc, VariableReference requestBuilder){
+  public static VariableReference mockPerform(TestCase tc, VariableReference mockMvc, VariableReference requestBuilder){
     // get the "perform" method of the smockMvc by reflection
     Method method = null;
     try {
-      method = SmockMvc.class.getMethod("smockPerform", SmockRequestBuilder.class);
+      method = MockMvc.class.getMethod("perform", RequestBuilder.class);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(e);
     }
 
     // create the method statement parameters
-    GenericMethod genericMethod = new GenericMethod(method, SmockMvc.class);
+    GenericMethod genericMethod = new GenericMethod(method, MockMvc.class);
     VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
 
     // TODO 31.01.2024 Julien Di Tria
     //  This MethodStatement should be extended into a new class and replaced in order to DSE the perform method
     //  (specifically the request.execute() method) to run as Spring would do instead of concrete execution
-    MethodStatement statement = new MethodStatement(tc, genericMethod, smockMvc, List.of(requestBuilder), retVal);
+    MethodStatement statement = new MethodStatement(tc, genericMethod, mockMvc, List.of(requestBuilder), retVal);
 
     // add the statement to the test case
-    VariableReference resultActions = tc.addStatement(statement);
-    return resultActions;
+      return tc.addStatement(statement);
   }
 }

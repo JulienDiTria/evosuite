@@ -3,30 +3,37 @@ package org.evosuite.spring;
 import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.evosuite.TestGenerationContext;
+import org.evosuite.utils.generic.GenericMethod;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-public class SpringSetup {
+/**
+ * Global class to set up the Spring context for a given controller if needed. It is used to
+ * <li>process the candidate controller to see if it's a spring controller or not</li>
+ * <li>analyse the controller and create/hold the mappings between MockMVC#perform and controller calls </li>
+ */
+public class SpringSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final SpringSetup instance = new SpringSetup();
+    private static final SpringSupport instance = new SpringSupport();
     private final RequestMappingHandlerMapping requestMappingHandlerMapping = new RequestMappingHandlerMapping();
     private SpringSetupRunner springSetupRunner;
 
-    private SpringSetup() {
+    private SpringSupport() {
     }
 
     /**
@@ -48,6 +55,12 @@ public class SpringSetup {
         return instance.requestMappingHandlerMapping;
     }
 
+    /**
+     * Check if the class is a Spring Controller. If so, analyse it, generate an empty test execute it to set up the Spring context for the controller.
+     * Does nothing otherwise.
+     *
+     * @param className the class name to check
+     */
     public static void setup(String className) {
         processCandidateController(className);
         if (isHandlerType(className)) {
@@ -193,5 +206,23 @@ public class SpringSetup {
 //            clazz = getClassForObject(((Class<?>) object).getName());
         }
         return clazz;
+    }
+
+    public static boolean hasController() {
+        return instance.springSetupRunner != null;
+    }
+
+    public static GenericMethod getMockMvcPerform() {
+        Method method = null;
+        try {
+            method = MockMvc.class.getMethod("perform", RequestBuilder.class);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+        return new GenericMethod(method, MockMvc.class);
+    }
+
+    public static RequestMappingInfo getRequestMappingInfo() {
+        return instance.requestMappingHandlerMapping.getRequestMappingInfo();
     }
 }

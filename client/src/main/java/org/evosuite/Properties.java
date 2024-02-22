@@ -298,6 +298,14 @@ public class Properties {
     @DoubleValue(min = 1)
     public static int FUNCTIONAL_MOCKING_INPUT_LIMIT = 5;
 
+    @Parameter(key = "spring_start_percent", group = "Test Creation", description = "Probability [0,1] of search budget after which to use spring framework when creating object instances")
+    @DoubleValue(min = 0.0, max = 1.0)
+    public static double SPRING_START_PERCENT = 0.0;
+
+    @Parameter(key = "p_use_spring", group = "Test Creation", description = "Probability [0,1] of using spring framework when creating object instances")
+    @DoubleValue(min = 0.0, max = 1.0)
+    public static double P_USE_SPRING = 0.5;
+
     @Parameter(key = "num_parallel_clients", group = "Test Creation", description = "Number of EvoSuite clients to run in parallel")
     public static int NUM_PARALLEL_CLIENTS = 1;
 

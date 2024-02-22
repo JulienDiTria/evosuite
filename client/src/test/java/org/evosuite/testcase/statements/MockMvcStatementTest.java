@@ -1,31 +1,29 @@
 package org.evosuite.testcase.statements;
 
 import com.examples.with.different.packagename.spring.petclinic.owner.OwnerController;
-import java.io.PrintStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
+import org.evosuite.spring.SmockMvc;
 import org.evosuite.spring.SmockRequestBuilder;
 import org.evosuite.spring.SmockResultActions;
-import org.evosuite.spring.SpringSetup;
+import org.evosuite.spring.SpringSupport;
 import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
-import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 public class MockMvcStatementTest {
@@ -34,8 +32,8 @@ public class MockMvcStatementTest {
 
     @BeforeClass
     public static void init() {
-        SpringSetup.setup(OwnerController.class.getName());
-        mockMvc = SpringSetup.getMockMvc();
+        SpringSupport.setup(OwnerController.class.getName());
+        mockMvc = SpringSupport.getMockMvc();
     }
 
     @Test
@@ -67,4 +65,17 @@ public class MockMvcStatementTest {
          */
     }
 
+    @Test
+    public void generatedTest() throws Exception {
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder0 = SmockRequestBuilder.request(HttpMethod.GET, "/owners/new");
+        String[] stringArray0 = new String[1];
+        stringArray0[0] = "Smith";
+        mockHttpServletRequestBuilder0.param("lastName", stringArray0);
+        String[] stringArray1 = new String[1];
+        stringArray1[0] = "Will";
+        mockHttpServletRequestBuilder0.param("firstName", stringArray1);
+        MockMvc mockMvc0 = SmockMvc.defaultMockMvc();
+        ResultActions resultActions0 = mockMvc0.perform(mockHttpServletRequestBuilder0);
+        resultActions0.andReturn();
+    }
 }

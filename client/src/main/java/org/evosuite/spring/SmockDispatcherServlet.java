@@ -27,9 +27,7 @@ import javax.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
-import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
 public class SmockDispatcherServlet {
 
@@ -64,7 +62,7 @@ public class SmockDispatcherServlet {
      */
     @Nullable
     protected SmockHandlerExecutionChain getHandler(SmockRequest request) throws Exception {
-        RequestMappingHandlerMapping mapping = SpringSetup.getRequestMappingHandlerMapping();
+        RequestMappingHandlerMapping mapping = SpringSupport.getRequestMappingHandlerMapping();
         return mapping.getHandler(request);
     }
 

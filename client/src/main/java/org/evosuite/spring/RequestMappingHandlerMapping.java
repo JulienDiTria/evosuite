@@ -27,13 +27,12 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import org.evosuite.utils.Randomness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
@@ -44,12 +43,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringValueResolver;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.cors.CorsUtils;
-import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
-import static org.evosuite.spring.SpringSetup.getClassForObject;
+import static org.evosuite.spring.SpringSupport.getClassForObject;
 
 public class RequestMappingHandlerMapping {
 
@@ -71,7 +68,7 @@ public class RequestMappingHandlerMapping {
     public boolean isHandlerType(Object controller) {
         Class<?> clazz = getClassForObject(controller);
 
-        if (! handlerTypes.containsKey(clazz)) {
+        if (!handlerTypes.containsKey(clazz)) {
             processCandidateController(clazz);
         }
         return handlerTypes.get(clazz);
@@ -297,4 +294,7 @@ public class RequestMappingHandlerMapping {
         return this.registry.toString();
     }
 
+    public RequestMappingInfo getRequestMappingInfo() {
+        return Randomness.choice(registry.getMappings());
+    }
 }

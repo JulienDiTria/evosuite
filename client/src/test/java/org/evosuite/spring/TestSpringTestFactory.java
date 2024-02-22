@@ -1,5 +1,6 @@
 package org.evosuite.spring;
 
+import com.examples.with.different.packagename.spring.petclinic.owner.OwnerController;
 import org.evosuite.Properties;
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
 import org.evosuite.testcase.TestCase;
@@ -7,6 +8,8 @@ import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.evosuite.testsuite.TestSuiteChromosome;
 import org.junit.Test;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -15,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 public class TestSpringTestFactory {
   @Test
   public void testCreateTestCaseForSpringRequestMapping() throws Exception {
+
     RequestMappingInfo requestMappingInfo =
         RequestMappingInfo
             .paths("/owners/new")

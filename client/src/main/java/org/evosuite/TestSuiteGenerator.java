@@ -45,7 +45,7 @@ import org.evosuite.seeding.ObjectPoolManager;
 import org.evosuite.setup.DependencyAnalysis;
 import org.evosuite.setup.ExceptionMapGenerator;
 import org.evosuite.setup.TestCluster;
-import org.evosuite.spring.SpringSetup;
+import org.evosuite.spring.SpringSupport;
 import org.evosuite.statistics.RuntimeVariable;
 import org.evosuite.statistics.StatisticsSender;
 import org.evosuite.strategy.TestGenerationStrategy;
@@ -109,13 +109,14 @@ public class TestSuiteGenerator {
             throw t;
         }
 
-        // Run the spring setup
-        SpringSetup.setup(Properties.TARGET_CLASS);
-
         // Analysis has to happen *after* the CUT is loaded since it will cause
         // several other classes to be loaded (including the CUT), but we require
         // the CUT to be loaded first
         DependencyAnalysis.analyzeClass(Properties.TARGET_CLASS, Arrays.asList(cp.split(File.pathSeparator)));
+
+        // Run the spring setup
+        SpringSupport.setup(Properties.TARGET_CLASS);
+
         LoggingUtils.getEvoLogger().info("* " + ClientProcess.getPrettyPrintIdentifier() + "Finished analyzing classpath");
     }
 
@@ -137,7 +138,8 @@ public class TestSuiteGenerator {
         TestCaseExecutor.initExecutor();
         try {
             initializeTargetClass();
-        } catch (Throwable e) {
+        }
+        catch (Throwable e) {
 
             // If the bytecode for a method exceeds 64K, Java will complain
             // Very often this is due to mutation instrumentation, so this dirty
@@ -183,7 +185,8 @@ public class TestSuiteGenerator {
                 return TestGenerationResultBuilder.buildErrorResult(e.getMessage() != null ? e.getMessage() : e.toString());
             }
 
-        } finally {
+        }
+        finally {
             if (Properties.RESET_STATIC_FIELDS) {
                 configureClassReInitializer();
 
