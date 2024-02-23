@@ -63,43 +63,6 @@ public class SmockRequestBuilder {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
-     * Helper to create a MockHttpServletRequestBuilder for a http get request in evosuite for the given url. Used to generate a call to
-     * {@link MockMvcRequestBuilders#get(String urlTemplate, Object... uriVars)}.
-     *
-     * @param tc  the test case to add the request builder to
-     * @param url the url to create the request builder for
-     * @return the request builder reference added to the testcase
-     */
-    public static VariableReference createGetRequestBuilder(TestCase tc, String url) {
-        logger.debug("createGetRequestBuilder");
-
-        // put the url into a string constant for parameter : urlTemplate
-        ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), url);
-
-        // create a new empty string array for parameter : uriVars
-        ArrayStatement arrayStmt = new ArrayStatement(tc, Object[].class, 1);
-        VariableReference arrayRef = tc.addStatement(arrayStmt);
-
-        // get the method by reflection
-        Method method = null;
-        try {
-            method = MockMvcRequestBuilders.class.getMethod("get", String.class, Object[].class);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-
-        // create the method statement
-        GenericMethod genericMethod = new GenericMethod(method, MockMvcRequestBuilders.class);
-        VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-        Statement statement = new MethodStatement(tc, genericMethod, null, List.of(urlValue, arrayRef), retVal);
-
-        // add the statement to the test case
-        VariableReference requestBuilder = tc.addStatement(statement);
-
-        return requestBuilder;
-    }
-
-    /**
      * Wrapper around MockMvcRequestBuilders.request to create a MockHttpServletRequestBuilder for the given http method and url as a
      * string. Used to generate a call to {@link MockMvcRequestBuilders#request(HttpMethod httpMethod, URI uri)}.
      *

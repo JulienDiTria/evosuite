@@ -37,53 +37,6 @@ import org.springframework.test.web.servlet.ResultActions;
 public class SmockResultActions {
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  SmockMvcResult mvcResult;
-
-  public SmockResultActions(SmockMvcResult mvcResult) {
-    this.mvcResult = mvcResult;
-  }
-
-  public SmockResultActions andExpect(SmockResultMatcher matcher) throws Exception {
-    matcher.match(mvcResult);
-    return this;
-  }
-
-  public SmockResultActions andDo(SmockResultHandler handler) throws Exception {
-    handler.handle(mvcResult);
-    return this;
-  }
-
-  public SmockMvcResult andReturn() {
-    return mvcResult;
-  }
-
-  /**
-   * Add a statement to the test case that calls the "andReturn" method on the result actions.
-   *
-   * @param tc the test case on which to add the statement
-   * @param resultActions the result actions on which to call the "andReturn" method
-   * @return the variable reference to the SmockMvcResult returned by the "andReturn" method
-   */
-  public static VariableReference smockAndReturn(TestCase tc, VariableReference resultActions){
-    // get the "andReturn" method by reflection
-    Method method;
-    try {
-      method = SmockResultActions.class.getMethod("andReturn");
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-
-    // create the method statement
-    GenericMethod genericMethod = new GenericMethod(method, SmockResultActions.class);
-    VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-    MethodStatement statement = new MethodStatement(tc, genericMethod, resultActions, Collections.emptyList(), retVal);
-
-    // add the statement to the test case
-    VariableReference mvcResult = tc.addStatement(statement);
-    return mvcResult;
-  }
-
-
   /**
    * Add a statement to the test case that calls the "andReturn" method on the result actions.
    *

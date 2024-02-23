@@ -76,14 +76,6 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         return super.methodBlock(frameworkMethod);
     }
 
-    /**
-     * Get the test context manager
-     */
-    public TestContextManager getTestContextManagerPublic() {
-        return super.getTestContextManager();
-    }
-
-
     static <T> T getFieldValue(Object holder, String fieldName) {
         Field field = null;
         Object fieldValue = null;

@@ -54,7 +54,6 @@ public abstract class AbstractMappingRegistry<T> {
 
     /**
      * Return matches for the given URL path. Not thread-safe.
-     * @see #acquireReadLock()
      */
     @Nullable
     public List<T> getMappingsByUrl(String urlPath) {
