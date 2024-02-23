@@ -1,6 +1,7 @@
 package org.evosuite.spring;
 
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
+import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
 import org.evosuite.testcase.execution.ExecutionResult;
@@ -11,6 +12,8 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+
+import static org.junit.Assert.fail;
 
 public class TestSpringTestFactory {
     @Test
@@ -25,16 +28,7 @@ public class TestSpringTestFactory {
         TestCase test = SpringTestFactory.createTestCaseForRequestMapping(requestMappingInfo);
         System.out.println(test);
 
-        TestChromosome c = new TestChromosome();
-        c.setTestCase(test);
-        ExecutionResult executionResult = c.executeForFitnessFunction(new BranchCoverageSuiteFitness());
-
-        System.out.println("test executed in " + executionResult.getExecutionTime() + "ms");
-        if (executionResult.getAllThrownExceptions().isEmpty()) {
-            System.out.println("no exception");
-        } else {
-            executionResult.getAllThrownExceptions().forEach(e -> System.out.println("exception" + e.toString()));
-        }
+        executeEvoSuiteTestCase(test);
     }
 
     @Test
@@ -49,5 +43,38 @@ public class TestSpringTestFactory {
         MockMvc mockMvc0 = SmockMvc.defaultMockMvc();
         ResultActions resultActions0 = mockMvc0.perform(mockHttpServletRequestBuilder0);
         resultActions0.andReturn();
+    }
+
+    @Test
+    public void testInsertRandomSpringCallFail(){
+        TestCase testCase = new DefaultTestCase();
+        SpringTestFactory.insertRandomSpringCall(testCase, 0);
+
+        System.out.println(testCase.toCode());
+
+        boolean failed = false;
+        try {
+            executeEvoSuiteTestCase(testCase);
+        } catch (AssertionError e) {
+            failed = true;
+        }
+        if(!failed)
+            fail("Test should have failed");
+
+    }
+
+    private void executeEvoSuiteTestCase(TestCase testCase) {
+        TestChromosome c = new TestChromosome();
+        c.setTestCase(testCase);
+        ExecutionResult executionResult = c.executeForFitnessFunction(new BranchCoverageSuiteFitness());
+
+        System.out.println("test executed in " + executionResult.getExecutionTime() + "ms");
+        if (executionResult.getAllThrownExceptions().isEmpty()) {
+            System.out.println("no exception");
+        } else {
+            System.err.println(executionResult.getAllThrownExceptions().size() + " exception(s) during test execution");
+            executionResult.getAllThrownExceptions().forEach(e -> e.printStackTrace(System.err));
+            fail("Exception(s) thrown during the execution of the test case.");
+        }
     }
 }

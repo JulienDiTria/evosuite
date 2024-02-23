@@ -1,6 +1,5 @@
 package org.evosuite.spring;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import org.evosuite.Properties;
 import org.evosuite.ga.ConstructionFailedException;
@@ -12,8 +11,6 @@ import org.evosuite.utils.Randomness;
 import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class SpringTestFactory {
@@ -22,28 +19,7 @@ public class SpringTestFactory {
 
     private static final SpringTestFactory singleton = new SpringTestFactory();
 
-    private static final HashMap<TestCase, SpringTestInsertedInfo> insertedInfo = new HashMap<>();
-
-
-    private class SpringTestInsertedInfo {
-        public int mockPerform;
-        public int requestBuilder;
-        public int resultMatcher;
-
-        public SpringTestInsertedInfo() {
-            mockPerform = 0;
-            requestBuilder = 0;
-            resultMatcher = 0;
-        }
-
-        public boolean isNextMockPerform(){
-            return mockPerform == 0;
-        }
-
-        public boolean isNextRequestBuilder(){
-            return requestBuilder == 0 || Randomness.nextBoolean();
-        }
-    }
+    private VariableReference mvcResult;
 
     /**
      * Get the singleton reference
@@ -105,52 +81,23 @@ public class SpringTestFactory {
     }
 
     private boolean insertRandomSpringCall(TestCase test, int position, int recursionDepth) {
-        SpringTestInsertedInfo info = getInsertedInfo(test);
+        int length;
         try {
-            if (addRequestBuilder(test, position, recursionDepth) &&
-                addMockPerform(test, position, recursionDepth) &&
-                addResultMatcher(test, position, recursionDepth)) {
-                return true;
-            }
+            length = test.size();
+            addRequestBuilder(test, position, recursionDepth);
+            position += (test.size() - length);
+
+            length = test.size();
+            addMockMvcPerform(test, position, recursionDepth);
+            position += (test.size() - length);
+
+            length = test.size();
+            addResultMatcher(test, position, recursionDepth);
+            position += (test.size() - length);
         } catch (ConstructionFailedException e) {
+            logger.warn("Failed to insert random Spring call", e);
             return false;
         }
-        return false;
-    }
-
-    /**
-     * Get the SpringTestInsertedInfo for the given test case
-     *
-     * @param test the test case
-     * @return the SpringTestInsertedInfo for the given test case
-     */
-    private SpringTestInsertedInfo getInsertedInfo(TestCase test) {
-        return insertedInfo.computeIfAbsent(test, k -> new SpringTestInsertedInfo());
-    }
-
-    /**
-     * Add a mock perform to the given test case, increasing the inserted info mock perform counter.
-     *
-     * @param test the test case in which to add the mock perform statement
-     * @param position the position in the test case where to add the mock perform statement
-     * @param recursionDepth the current recursion depth
-     * @return true if the mock perform was added, false otherwise
-     * @throws ConstructionFailedException if the max recursion depth is reached
-     */
-    private boolean addMockPerform(TestCase test, int position, int recursionDepth) throws ConstructionFailedException{
-        assertRecursionDepth(recursionDepth);
-
-        int length;
-
-        // add the mock mvc object
-        length = test.size();
-        VariableReference mockMvc = TestFactory.getInstance().addInjection(test, SpringSupport.getMockMvc(), position, recursionDepth);
-        position += (test.size() - length);
-
-        // add the perform statement
-        GenericMethod genericMethod = SpringSupport.getMockMvcPerform();
-        TestFactory.getInstance().addMethodFor(test, mockMvc, genericMethod, position);
-
         return true;
     }
 
@@ -175,7 +122,7 @@ public class SpringTestFactory {
             return false;
         }
 
-        // add the request builder and add the params to it
+        // create the request builder and add the params to it
         length = test.size();
         VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(test, position, requestMappingInfo);
         position += (test.size() - length);
@@ -185,7 +132,48 @@ public class SpringTestFactory {
     }
 
     /**
-     * Add a result matcher to the given test case, increasing the inserted info result matcher counter.
+     * Add a MockMvc object to the test, then a MockMVC "perform" and a "andReturn" statement to get the MvcResult.
+     *
+     * @param test the test case in which to add the statements
+     * @param position the position in the test case where to add the statements
+     * @param recursionDepth the current recursion depth
+     * @return true if all statements were added, false otherwise
+     * @throws ConstructionFailedException if the max recursion depth is reached
+     */
+    private boolean addMockMvcPerform(TestCase test, int position, int recursionDepth) throws ConstructionFailedException{
+        assertRecursionDepth(recursionDepth);
+
+        int length;
+
+        // check that SpringSupport has a mock mvc object
+        if (!SpringSupport.hasController() || SpringSupport.getMockMvc() == null) {
+            // TODO 2024.02.23 Julien Di Tria
+            //  this should fail here in the future and return false, but for now we will just log a warning and use a default mock mvc
+            //  object to replace the actual mock coming from the spring context.
+            logger.warn("No mock mvc object available, using default mock mvc object. Expect using this will fail on execution.");
+            SpringSupport.setMockMvc(SmockMvc.defaultMockMvc());
+//            return false;
+        }
+
+        // add the mock mvc object as an injection
+        length = test.size();
+        VariableReference mockMvc = TestFactory.getInstance().addInjection(test, SpringSupport.getMockMvc(), position, recursionDepth);
+        position += (test.size() - length);
+
+        // add the "perform" statement
+        length = test.size();
+        GenericMethod genericMethod = SpringSupport.getMockMvcPerform();
+        VariableReference resultActions = TestFactory.getInstance().addMethodFor(test, mockMvc, genericMethod, position);
+        position += (test.size() - length);
+
+        // add the "andReturn" statement
+        VariableReference mvcResult = SmockResultActions.andReturn(test, position, resultActions);
+        this.mvcResult = mvcResult;
+        return true;
+    }
+
+    /**
+     * Add a result matcher to the given test case.
      *
      * @param test the test case in which to add the result matcher statement
      * @param position the position in the test case where to add the result matcher statement
@@ -195,7 +183,10 @@ public class SpringTestFactory {
      */
     private boolean addResultMatcher(TestCase test, int position, int recursionDepth) throws ConstructionFailedException {
         assertRecursionDepth(recursionDepth);
-        return false;
+
+        SmockMvcResultMatchers.addResultMatcher(test, position, this.mvcResult);
+
+        return true;
     }
 
     /**

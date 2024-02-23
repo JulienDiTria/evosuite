@@ -83,6 +83,7 @@ public class SmockResultActions {
     return mvcResult;
   }
 
+
   /**
    * Add a statement to the test case that calls the "andReturn" method on the result actions.
    *
@@ -90,7 +91,18 @@ public class SmockResultActions {
    * @param resultActions the result actions on which to call the "andReturn" method
    * @return the variable reference to the SmockMvcResult returned by the "andReturn" method
    */
-  public static VariableReference andReturn(TestCase tc, VariableReference resultActions){
+  public static VariableReference andReturn(TestCase tc, VariableReference resultActions) {
+    return andReturn(tc, tc.size(), resultActions);
+  }
+
+  /**
+   * Add a statement to the test case that calls the "andReturn" method on the result actions.
+   *
+   * @param tc the test case on which to add the statement
+   * @param resultActions the result actions on which to call the "andReturn" method
+   * @return the variable reference to the SmockMvcResult returned by the "andReturn" method
+   */
+  public static VariableReference andReturn(TestCase tc, int position, VariableReference resultActions) {
     // get the "andReturn" method by reflection
     Method method;
     try {
@@ -105,7 +117,7 @@ public class SmockResultActions {
     MethodStatement statement = new MethodStatement(tc, genericMethod, resultActions, Collections.emptyList(), retVal);
 
     // add the statement to the test case
-    VariableReference mvcResult = tc.addStatement(statement);
+    VariableReference mvcResult = tc.addStatement(statement, position);
     return mvcResult;
   }
 }

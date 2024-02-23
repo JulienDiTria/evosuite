@@ -43,6 +43,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringValueResolver;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
@@ -295,6 +296,19 @@ public class RequestMappingHandlerMapping {
     }
 
     public RequestMappingInfo getRequestMappingInfo() {
+        // TODO 2023.02.23 Julien Di Tria
+        //  If empty, should fail. For now this is just a warning and we use a mock request mapping info.
+        if(registry.getMappings().isEmpty()) {
+            logger.warn("No request mapping info available, using mock data");
+            return mockRequestMappingInfo;
+        }
         return Randomness.choice(registry.getMappings());
     }
+
+    private static final RequestMappingInfo mockRequestMappingInfo =
+        RequestMappingInfo
+            .paths("/owners/new")
+            .methods(RequestMethod.GET)
+            .params("lastName=Smith", "firstName=Will")
+            .build();
 }

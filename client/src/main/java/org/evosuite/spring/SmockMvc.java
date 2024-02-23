@@ -42,32 +42,6 @@ import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder;
 
 public class SmockMvc {
 
-  public SmockMvc(){
-    // empty constructor
-  }
-
-  /**
-   * Perform the request contained by the request builder and return the ResultActions wrapping around the result.
-   *
-   * @param requestBuilder the request builder that contains the request to be performed
-   * @return the result actions wrapping around the result
-   * @throws Exception
-   */
-  public SmockResultActions smockPerform(SmockRequestBuilder requestBuilder) throws Exception {
-
-    // build the request
-    SmockRequest request = requestBuilder.buildRequest();
-
-    // execute the request
-    SmockResponse response = request.execute();
-
-    // put the response into a mvc result
-    final SmockMvcResult mvcResult = new SmockDefaultMvcResult(request, response);
-
-    // wrap around the mvc result
-    return new SmockResultActions(mvcResult);
-  }
-
   public static MockMvc defaultMockMvc() {
     return MockMvcBuilders.standaloneSetup().build();
   }
@@ -88,7 +62,7 @@ public class SmockMvc {
    */
   public static VariableReference createMockMvc(TestCase tc){
     // get the constructor by reflection
-    Method method = null;
+    Method method;
     try {
       method = SmockMvc.class.getMethod("defaultMockMvc");
     } catch (NoSuchMethodException e) {

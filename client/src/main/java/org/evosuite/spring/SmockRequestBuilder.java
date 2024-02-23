@@ -62,33 +62,6 @@ public class SmockRequestBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-//      private static HTTP
-
-    private final String method;
-
-    private final URI url;
-
-    private final MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-
-    public SmockRequestBuilder(HttpMethod httpMethod, String url) throws URISyntaxException {
-        this(httpMethod.name(), new URI(url));
-    }
-
-    private SmockRequestBuilder(String method, URI url) {
-        Assert.notNull(method, "'httpMethod' is required");
-        Assert.notNull(url, "'url' is required");
-        this.method = method;
-        this.url = url;
-    }
-
-    private static <T> void addToMultiValueMap(MultiValueMap<String, T> map, String name, T[] values) {
-        Assert.hasLength(name, "'name' must not be empty");
-        Assert.notEmpty(values, "'values' must not be empty");
-        for (T value : values) {
-            map.add(name, value);
-        }
-    }
-
     /**
      * Helper to create a MockHttpServletRequestBuilder for a http get request in evosuite for the given url. Used to generate a call to
      * {@link MockMvcRequestBuilders#get(String urlTemplate, Object... uriVars)}.
@@ -126,6 +99,15 @@ public class SmockRequestBuilder {
         return requestBuilder;
     }
 
+    /**
+     * Wrapper around MockMvcRequestBuilders.request to create a MockHttpServletRequestBuilder for the given http method and url as a
+     * string. Used to generate a call to {@link MockMvcRequestBuilders#request(HttpMethod httpMethod, URI uri)}.
+     *
+     * @param httpMethod The HTTP method to use
+     * @param url The URL to use
+     * @return A request builder for the given request
+     * @throws URISyntaxException if the given URL is not a valid URI
+     */
     public static MockHttpServletRequestBuilder request(HttpMethod httpMethod, String url) throws URISyntaxException {
         return MockMvcRequestBuilders.request(httpMethod, new URI(url));
     }
@@ -215,7 +197,6 @@ public class SmockRequestBuilder {
         RequestMappingInfo requestMappingInfo) {
         logger.debug("addParamsToRequestBuilder");
 
-
         // get the params as a list of string constants
         ParamsRequestCondition paramsRequestCondition = requestMappingInfo.getParamsCondition();
         Set<NameValueExpression<String>> expressions = paramsRequestCondition.getExpressions();
@@ -270,17 +251,4 @@ public class SmockRequestBuilder {
         tc.addStatement(statement, position+2);
     }
 
-    SmockRequest buildRequest() throws Exception {
-        SmockRequest request = new SmockRequest();
-//            request.setMethod(this.method);
-//            request.setUrl(this.url);
-//            request.setParameters(this.parameters);
-//            request.();
-        return request;
-    }
-
-    public SmockRequestBuilder param(String name, String... values) {
-        addToMultiValueMap(this.parameters, name, values);
-        return this;
-    }
 }

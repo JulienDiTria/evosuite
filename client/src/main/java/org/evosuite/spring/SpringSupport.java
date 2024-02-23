@@ -32,6 +32,7 @@ public class SpringSupport {
     private static final SpringSupport instance = new SpringSupport();
     private final RequestMappingHandlerMapping requestMappingHandlerMapping = new RequestMappingHandlerMapping();
     private SpringSetupRunner springSetupRunner;
+    private MockMvc mockMvc;
 
     private SpringSupport() {
     }
@@ -168,23 +169,14 @@ public class SpringSupport {
         }
 
         instance.springSetupRunner.run(runNotifier);
-        MockMvc mockMvc = instance.springSetupRunner.mockMvc;
-        assert (mockMvc != null);
-        System.out.println("MockMvc: " + mockMvc);
-
-//        try {
-//            RequestBuilder requestBuilder = get("/owners").param("lastName", "Smith");
-//            mockMvc.perform(requestBuilder)
-//                .andExpect(status().isOk());
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-
+        instance.mockMvc = instance.springSetupRunner.mockMvc;
+        assert (instance.mockMvc != null);
+        System.out.println("MockMvc: " + instance.mockMvc);
         System.out.println("SpringSetupRunner executed");
     }
     
     public static MockMvc getMockMvc() {
-        return instance.springSetupRunner.mockMvc;
+        return instance.mockMvc;
     }
 
     /**
@@ -224,5 +216,9 @@ public class SpringSupport {
 
     public static RequestMappingInfo getRequestMappingInfo() {
         return instance.requestMappingHandlerMapping.getRequestMappingInfo();
+    }
+
+    public static void setMockMvc(MockMvc mockMvc) {
+        instance.mockMvc = mockMvc;
     }
 }
