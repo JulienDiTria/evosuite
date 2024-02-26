@@ -1,6 +1,8 @@
 package org.evosuite.spring;
 
+import com.examples.with.different.packagename.spring.petclinic.owner.OwnerController;
 import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
+import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestChromosome;
@@ -46,8 +48,27 @@ public class TestSpringTestFactory {
     }
 
     @Test
-    public void testInsertRandomSpringCallFail(){
+    public void testInsertRandomSpringCallFail() throws ConstructionFailedException {
         TestCase testCase = new DefaultTestCase();
+        SpringTestFactory.insertRandomSpringCall(testCase, 0);
+
+        System.out.println(testCase.toCode());
+
+        boolean failed = false;
+        try {
+            executeEvoSuiteTestCase(testCase);
+        } catch (AssertionError e) {
+            failed = true;
+        }
+        if(!failed)
+            fail("Test should have failed");
+
+    }
+
+    @Test
+    public void testInsertRandomSpringCallSuccess() throws ConstructionFailedException {
+        TestCase testCase = new DefaultTestCase();
+        SpringSupport.setup(OwnerController.class.getName());
         SpringTestFactory.insertRandomSpringCall(testCase, 0);
 
         System.out.println(testCase.toCode());

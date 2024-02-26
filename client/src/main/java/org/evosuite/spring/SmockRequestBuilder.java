@@ -29,6 +29,8 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
+import org.evosuite.Properties;
+import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.AssignmentStatement;
@@ -43,6 +45,7 @@ import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericClassFactory;
 import org.evosuite.utils.generic.GenericConstructor;
 import org.evosuite.utils.generic.GenericMethod;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -57,6 +60,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.mvc.condition.NameValueExpression;
 import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class SmockRequestBuilder {
 
@@ -82,6 +86,28 @@ public class SmockRequestBuilder {
      */
 
     /**
+     * Add a request builder to the test case for the given request mapping info. The request builder is created using
+     * the request mapping info as a seed. The request builder is then used to add the params and other
+     * options to itself and the reference to the request builder is returned.
+     *
+     * @param testCase the test case to add the request builder to
+     * @param position the position in the test case where the request builder is added
+     * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
+     * @return the request builder reference added to the testcase
+     * @throws ConstructionFailedException if the construction of the request builder fails
+     */
+    public static VariableReference addRequestBuilder(TestCase testCase, int position, RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
+        int length = testCase.size();
+        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo);
+        position += (testCase.size() - length);
+
+        requestBuilder = SmockRequestBuilder.addParamsToRequestBuilder(testCase, position, requestBuilder, requestMappingInfo);
+
+        // add other options...
+        return requestBuilder;
+    }
+
+    /**
      * Helper to create a MockHttpServletRequestBuilder in evosuite. Creates a request builder for the given request mapping info and
      * appends it to the test case.
      * <p>
@@ -91,7 +117,8 @@ public class SmockRequestBuilder {
      * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
      * @return the request builder reference added to the testcase
      */
-    public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
+    public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo)
+        throws ConstructionFailedException {
         return createRequestBuilder(tc, tc.size(), requestMappingInfo);
     }
 
@@ -106,7 +133,8 @@ public class SmockRequestBuilder {
      * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
      * @return the request builder reference added to the testcase
      */
-    public static VariableReference createRequestBuilder(TestCase tc, int position, RequestMappingInfo requestMappingInfo) {
+    public static VariableReference createRequestBuilder(TestCase tc, int position, RequestMappingInfo requestMappingInfo)
+        throws ConstructionFailedException {
         logger.debug("createRequestBuilder");
 
         // get the http method as the request method into a new HttpMethod enum
@@ -117,14 +145,15 @@ public class SmockRequestBuilder {
         //  url value can be GA variable to be mutated (if not given by the request mapping info)
         // get the url template as the first pattern into a string constant
         String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
-        ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), url);
+        String validUrl = validUriFromOnUrl(url, 0);
+        ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), validUrl);
 
         // get the method by reflection
         Method method = null;
         try {
             method = SmockRequestBuilder.class.getMethod("request", HttpMethod.class, String.class);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
         }
 
         // create the constructor statement
@@ -143,9 +172,9 @@ public class SmockRequestBuilder {
      * @param requestBuilder     the request builder to add the params to
      * @param requestMappingInfo the request mapping info provided by the Spring framework containing a seed for the parameters
      */
-    public static void addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
-        RequestMappingInfo requestMappingInfo) {
-        addParamsToRequestBuilder(tc, tc.size(), requestBuilder, requestMappingInfo);
+    public static VariableReference addParamsToRequestBuilder(TestCase tc, VariableReference requestBuilder,
+        RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
+        return addParamsToRequestBuilder(tc, tc.size(), requestBuilder, requestMappingInfo);
     }
 
     /**
@@ -156,8 +185,8 @@ public class SmockRequestBuilder {
      * @param requestBuilder     the request builder to add the params to
      * @param requestMappingInfo the request mapping info provided by the Spring framework containing a seed for the parameters
      */
-    public static void addParamsToRequestBuilder(TestCase tc, int position, VariableReference requestBuilder,
-        RequestMappingInfo requestMappingInfo) {
+    public static VariableReference addParamsToRequestBuilder(TestCase tc, int position, VariableReference requestBuilder,
+        RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
         logger.debug("addParamsToRequestBuilder");
 
         // get the params as a list of string constants
@@ -166,12 +195,14 @@ public class SmockRequestBuilder {
 
         // TODO 22.02.2024 Julien Di Tria
         //  param name can be GA variable to be mutated (sometimes adding that param, somtimes not)
+        VariableReference retVal = requestBuilder;
         int length;
         for(NameValueExpression<String> param : expressions) {
-              length = tc.size();
-              addParamToRequestBuilder(tc, position, requestBuilder, param);
-              position += (tc.size() - length);
+            length = tc.size();
+            retVal = addParamToRequestBuilder(tc, position, requestBuilder, param);
+            position += (tc.size() - length);
         }
+        return retVal;
     }
 
     /**
@@ -183,8 +214,8 @@ public class SmockRequestBuilder {
      * @param param          the param to add
      * @return the request builder reference added to the testcase
      */
-    private static void addParamToRequestBuilder(TestCase tc, int position, VariableReference requestBuilder,
-        NameValueExpression<String> param) {
+    private static VariableReference addParamToRequestBuilder(TestCase tc, int position, VariableReference requestBuilder,
+        NameValueExpression<String> param) throws ConstructionFailedException {
         logger.debug("addParamToRequestBuilder");
 
         // TODO 01.02.2024 Julien Di Tria
@@ -206,12 +237,45 @@ public class SmockRequestBuilder {
         try {
             method = MockHttpServletRequestBuilder.class.getMethod("param", String.class, String[].class);
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
         }
         GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
         VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
         MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, arrayRef), retVal);
-        tc.addStatement(statement, position+2);
+        return tc.addStatement(statement, position+2);
     }
 
+    /**
+     * Helper to generate a valid URL string from a urlTemplate.
+     * @param url the url to validate
+     * @param recursionDepth the current recursion depth
+     * @return a valid URL string
+     * @throws ConstructionFailedException if the max recursion depth is reached
+     */
+    private static String validUriFromOnUrl(String url, int recursionDepth) throws ConstructionFailedException {
+        try{
+            new URI(url);
+            return url;
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URI: {}, depth {} ", url, recursionDepth);
+
+            if (recursionDepth < Properties.MAX_RECURSION) {
+                // add a variable for each path variable in the url
+                Object[] vars = new Object[recursionDepth];
+                for (int i = 0; i < recursionDepth; i++) {
+                    // TODO 22.02.2024 Julien Di Tria : Should be random vars or GA vars
+                    vars[i] = "var" + i;
+                }
+                try {
+                    // try to build the url with the variables
+                    return UriComponentsBuilder.fromUriString(url).buildAndExpand(vars).encode().toUriString();
+                } catch (IllegalArgumentException e1) {
+                    // recursively try to generate a valid url
+                    return validUriFromOnUrl(url, recursionDepth + 1);
+                }
+            } else {
+                throw new ConstructionFailedException("unable to generate a valid url from: " + url);
+            }
+        }
+    }
 }

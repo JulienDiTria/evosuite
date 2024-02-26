@@ -38,18 +38,21 @@ public class SpringTestFactory {
      * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
      * @return the test case containing the request builder and the result
      */
-    public static TestCase createTestCaseForRequestMapping(RequestMappingInfo requestMappingInfo) {
+    public static TestCase createTestCaseForRequestMapping(RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
         TestCase tc = new DefaultTestCase();
-        VariableReference requestBuilder = addRequestBuilder(tc, requestMappingInfo);
-        logger.debug("{}", requestBuilder);
-        VariableReference mvcResult = performAndGetResult(tc, requestBuilder);
+        VariableReference requestBuilder = addRequestBuilder(tc, 0, requestMappingInfo);
+        VariableReference mvcResult = performAndGetResult(tc, tc.size(), requestBuilder);
         return tc;
     }
 
-    public static VariableReference addRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo) {
+    public static VariableReference addRequestBuilder(TestCase testCase, int position, RequestMappingInfo requestMappingInfo)
+        throws ConstructionFailedException {
         logger.debug("addRequestBuilder");
-        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(tc, requestMappingInfo);
-        SmockRequestBuilder.addParamsToRequestBuilder(tc, requestBuilder, requestMappingInfo);
+        int length;
+        length = testCase.size();
+        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo);
+        position += (testCase.size() - length);
+        SmockRequestBuilder.addParamsToRequestBuilder(testCase, position, requestBuilder, requestMappingInfo);
         return requestBuilder;
     }
 
@@ -62,47 +65,48 @@ public class SpringTestFactory {
      * @param tc             the test case in which the request is performed
      * @param requestBuilder the request builder that contains the request to be performed
      */
-    private static VariableReference performAndGetResult(TestCase tc, VariableReference requestBuilder) {
+    private static VariableReference performAndGetResult(TestCase testCase, int position, VariableReference requestBuilder) throws ConstructionFailedException {
         logger.debug("performAndGetResult");
 
+        int length;
+        length = testCase.size();
+
         // create the smockMVC object
-        VariableReference mockMvc = SmockMvc.createMockMvc(tc);
+        VariableReference mockMvc = SmockMvc.createMockMvc(testCase, position);
+        position += (testCase.size() - length);
 
         // call perform and get the result actions
-        VariableReference resultActions = SmockMvc.mockPerform(tc, mockMvc, requestBuilder);
+        VariableReference resultActions = SmockMvc.mockPerform(testCase, position, mockMvc, requestBuilder);
+        position += (testCase.size() - length);
 
         // return the mvcResult from the result actions
-        VariableReference mvcResult = SmockResultActions.andReturn(tc, resultActions);
-        return mvcResult;
+        return SmockResultActions.andReturn(testCase, position, resultActions);
     }
 
-    public static boolean insertRandomSpringCall(TestCase test, int position) {
+    public static boolean insertRandomSpringCall(TestCase test, int position) throws ConstructionFailedException {
         return singleton.insertRandomSpringCall(test, position, 0);
     }
 
-    private boolean insertRandomSpringCall(TestCase test, int position, int recursionDepth) {
+    private boolean insertRandomSpringCall(TestCase test, int position, int recursionDepth) throws ConstructionFailedException {
         int length;
-        try {
-            length = test.size();
-            addRequestBuilder(test, position, recursionDepth);
-            position += (test.size() - length);
+        length = test.size();
+        if(!addRequestBuilder(test, position, recursionDepth)) return false;
+        position += (test.size() - length);
 
-            length = test.size();
-            addMockMvcPerform(test, position, recursionDepth);
-            position += (test.size() - length);
+        length = test.size();
+        if(!addMockMvcPerform(test, position, recursionDepth)) return false;
+        position += (test.size() - length);
 
-            length = test.size();
-            addResultMatcher(test, position, recursionDepth);
-            position += (test.size() - length);
-        } catch (ConstructionFailedException e) {
-            logger.warn("Failed to insert random Spring call", e);
-            return false;
-        }
+        length = test.size();
+        if(!addResultMatcher(test, position, recursionDepth)) return false;
+        position += (test.size() - length);
+
+        test.setUsesSpring(true);
         return true;
     }
 
     /**
-     * Add a request builder to the given test case, increasing the inserted info request builder counter.
+     * Add a request builder to the given test case.
      *
      * @param test the test case in which to add the request builder statement
      * @param position the position in the test case where to add the request builder statement
@@ -113,8 +117,6 @@ public class SpringTestFactory {
     private boolean addRequestBuilder(TestCase test, int position, int recursionDepth) throws ConstructionFailedException {
         assertRecursionDepth(recursionDepth);
 
-        int length;
-
         // get a random request mapping info from SpringSupport
         RequestMappingInfo requestMappingInfo = SpringSupport.getRequestMappingInfo();
         if (requestMappingInfo == null) {
@@ -123,11 +125,7 @@ public class SpringTestFactory {
         }
 
         // create the request builder and add the params to it
-        length = test.size();
-        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(test, position, requestMappingInfo);
-        position += (test.size() - length);
-
-        SmockRequestBuilder.addParamsToRequestBuilder(test, position, requestBuilder, requestMappingInfo);
+        SmockRequestBuilder.addRequestBuilder(test, position, requestMappingInfo);
         return true;
     }
 

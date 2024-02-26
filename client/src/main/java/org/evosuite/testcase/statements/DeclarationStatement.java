@@ -11,6 +11,7 @@ import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.variable.VariableReference;
+import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericAccessibleObject;
 
 public class DeclarationStatement extends AbstractStatement {
@@ -35,7 +36,8 @@ public class DeclarationStatement extends AbstractStatement {
 
     @Override
     public Statement copy(TestCase newTestCase, int offset) {
-        VariableReference newRetval = retval.copy(newTestCase, offset);
+        VariableReference newRetval = new VariableReferenceImpl(newTestCase, retval.getType());
+//        VariableReference newRetval = retval.copy(newTestCase, offset);
         DeclarationStatement statement = new DeclarationStatement(newTestCase, newRetval);
 
         // same value as the original into the new statement, not a problem as used for injection only

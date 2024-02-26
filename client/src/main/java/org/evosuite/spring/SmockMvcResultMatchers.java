@@ -3,6 +3,7 @@ package org.evosuite.spring;
 import com.sun.tools.javac.util.List;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.MethodStatement;
 import org.evosuite.testcase.variable.ConstantValue;
@@ -18,7 +19,7 @@ import org.springframework.test.web.servlet.result.StatusResultMatchers;
 
 public class SmockMvcResultMatchers {
 
-    public static void addResultMatcher(TestCase testCase, int position, VariableReference mvcResult) {
+    public static void addResultMatcher(TestCase testCase, int position, VariableReference mvcResult) throws ConstructionFailedException {
         int length;
 
         // add specific result matcher
@@ -37,55 +38,54 @@ public class SmockMvcResultMatchers {
         position += testCase.size() - length;
     }
 
-    private static VariableReference createSpecificResultMatcher(TestCase testCase, int position) {
+    private static VariableReference createSpecificResultMatcher(TestCase testCase, int position) throws ConstructionFailedException {
         Method method;
         try {
             method = MockMvcResultMatchers.class.getMethod("status");
-        } catch (NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
         }
 
         GenericMethod genericMethod = new GenericMethod(method, MockMvcResultMatchers.class);
         VariableReference specificResultMatcher = new VariableReferenceImpl(testCase, genericMethod.getReturnType());
         MethodStatement statement = new MethodStatement(testCase, genericMethod, null, Collections.emptyList(), specificResultMatcher);
 
-        testCase.addStatement(statement, position);
-        return specificResultMatcher;
+        return testCase.addStatement(statement, position);
     }
 
-    private static VariableReference getResultMatcher(TestCase testCase, int position, VariableReference specificResultMatcher) {
+    private static VariableReference getResultMatcher(TestCase testCase, int position, VariableReference specificResultMatcher)
+        throws ConstructionFailedException {
 
         ConstantValue statusValue = new ConstantValue(testCase, GenericClassFactory.get(int.class), HttpStatus.OK.value());
 
         Method method;
         try {
             method = StatusResultMatchers.class.getMethod("is", int.class);
-        } catch (NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
         }
 
         GenericMethod genericMethod = new GenericMethod(method, StatusResultMatchers.class);
         VariableReference resultMatcher = new VariableReferenceImpl(testCase, genericMethod.getReturnType());
         MethodStatement statement = new MethodStatement(testCase, genericMethod, specificResultMatcher, List.of(statusValue), resultMatcher);
 
-        testCase.addStatement(statement, position);
-        return resultMatcher;
+        return testCase.addStatement(statement, position);
     }
 
-    private static VariableReference match(TestCase testCase, int position, VariableReference resultMatcher, VariableReference mvcResult) {
+    private static VariableReference match(TestCase testCase, int position, VariableReference resultMatcher, VariableReference mvcResult)
+        throws ConstructionFailedException {
 
         Method method;
         try {
             method = ResultMatcher.class.getMethod("match", MvcResult.class);
-        } catch (NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
         }
 
         GenericMethod genericMethod = new GenericMethod(method, ResultMatcher.class);
         VariableReference match = new VariableReferenceImpl(testCase, genericMethod.getReturnType());
         MethodStatement statement = new MethodStatement(testCase, genericMethod, resultMatcher, List.of(mvcResult), match);
 
-        testCase.addStatement(statement, position);
-        return match;
+        return testCase.addStatement(statement, position);
     }
 }

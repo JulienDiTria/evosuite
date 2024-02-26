@@ -26,6 +26,7 @@ import com.sun.tools.javac.util.List;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ConstructorStatement;
 import org.evosuite.testcase.statements.MethodStatement;
@@ -60,13 +61,13 @@ public class SmockMvc {
    * @param tc the test case to add the SmockMvc object to
    * @return the variable reference to the SmockMvc object
    */
-  public static VariableReference createMockMvc(TestCase tc){
+  public static VariableReference createMockMvc(TestCase tc, int position) throws ConstructionFailedException {
     // get the constructor by reflection
     Method method;
     try {
       method = SmockMvc.class.getMethod("defaultMockMvc");
     } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
+      throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
     }
 
     // create the constructor statement
@@ -74,7 +75,7 @@ public class SmockMvc {
     MethodStatement statement = new MethodStatement(tc, genericMethod, null, Collections.emptyList());
 
     // add the statement to the test case
-    return tc.addStatement(statement);
+    return tc.addStatement(statement, position);
   }
 
   /**
@@ -87,25 +88,22 @@ public class SmockMvc {
    * @param requestBuilder the request builder that contains the request to be performed
    * @return the result actions wrapping around the result
    */
-  public static VariableReference mockPerform(TestCase tc, VariableReference mockMvc, VariableReference requestBuilder){
+  public static VariableReference mockPerform(TestCase tc, int position, VariableReference mockMvc, VariableReference requestBuilder)
+      throws ConstructionFailedException {
     // get the "perform" method of the smockMvc by reflection
     Method method = null;
     try {
       method = MockMvc.class.getMethod("perform", RequestBuilder.class);
     } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
+      throw new ConstructionFailedException(e.getClass().getName() +" : " + e.getMessage());
     }
 
     // create the method statement parameters
     GenericMethod genericMethod = new GenericMethod(method, MockMvc.class);
     VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-
-    // TODO 31.01.2024 Julien Di Tria
-    //  This MethodStatement should be extended into a new class and replaced in order to DSE the perform method
-    //  (specifically the request.execute() method) to run as Spring would do instead of concrete execution
     MethodStatement statement = new MethodStatement(tc, genericMethod, mockMvc, List.of(requestBuilder), retVal);
 
     // add the statement to the test case
-      return tc.addStatement(statement);
+      return tc.addStatement(statement, position);
   }
 }

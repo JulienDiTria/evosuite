@@ -459,6 +459,18 @@ public interface TestCase extends Iterable<Statement>, Cloneable, Listenable<Voi
     void setUnstable(boolean unstable);
 
     /**
+     * Set whether this test case uses Spring Framework or not
+     *
+     * @param usesSpring true if this test case uses Spring Framework, false otherwise
+     */
+    void setUsesSpring(boolean usesSpring);
+
+    /**
+     * Tell if the TestCase uses Spring framework or not
+     */
+    boolean usesSpring();
+
+    /**
      * <p>size</p>
      *
      * @return Number of statements

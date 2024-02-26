@@ -89,6 +89,11 @@ public class DefaultTestCase implements TestCase, Serializable {
     private int id;
 
     /**
+     * Whether this test case uses Spring framework or not.
+     */
+    private boolean usesSpring = false;
+
+    /**
      * Constructs an empty test case, i.e., initially containing no statements.
      */
     public DefaultTestCase() {
@@ -1254,6 +1259,22 @@ public class DefaultTestCase implements TestCase, Serializable {
     @Override
     public int size() {
         return statements.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setUsesSpring(boolean usesSpring) {
+        this.usesSpring = usesSpring;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean usesSpring(){
+        return this.usesSpring;
     }
 
     /**
