@@ -1,7 +1,9 @@
 package org.evosuite.spring;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -85,9 +87,6 @@ public class SpringSupport {
      *  This methods works while running the tests, but unlikely to work in the real from a Jar application, as there is a bypass of the
      *  classloader by moving the newly compiled file into a "known" path that the classloader will be able to load from.
      * <p>
-     *  TODO 16.07.2021 Julien Di Tria:
-     *   For now, this method uses a template of the test class, but ideally will need to analyze the controller to create a suitable
-     *   empty test class.
      *
      * @param controller the controller for which to create the test suite
      * @return a test suite loaded into the classpath
@@ -97,16 +96,20 @@ public class SpringSupport {
         Class<?> clazz = getClassForObject(controller);
         ClassLoader classLoader = logger.getClass().getClassLoader();
 
+        // analyze the controller to create a suitable empty test class
+        SpringClassTestContext springClassTestContext = new SpringClassTestContext(clazz);
+        String testSuiteContent = springClassTestContext.createTestSuiteContent();
+
         // create empty test folder
         File tmpRoot = File.createTempFile("EvoSpring" + System.currentTimeMillis(), "");
         tmpRoot.delete();
         tmpRoot.mkdirs();
         tmpRoot.deleteOnExit();
 
-        // create empty test class
+        // create the files for source code and compiled class
         String packageName = clazz.getPackage().getName();
         String packagePath = packageName.replace(".", File.separator);
-        String testSuiteName = clazz.getSimpleName() + "MyTest";
+        String testSuiteName = springClassTestContext.getTestSuiteName();
         String className = packageName + "." + testSuiteName;
         File testFile = new File(tmpRoot, testSuiteName + ".java");
         File compiledFile = new File(tmpRoot, testSuiteName + ".class");
@@ -114,31 +117,25 @@ public class SpringSupport {
         testFile.createNewFile();
         compiledFile.deleteOnExit();
 
-        // copy from template
-        String templateName = "/Users/julien.ditria/github/JulienDiTria/evosuite/client/src/test/java/com/examples/with/different"
-            + "/packagename/spring/petclinic/owner/OwnerControllerSimpleTest.java";
-
-        File templateFile = new File(templateName);
-
-        try {
-            String content = new String(Files.readAllBytes(templateFile.toPath()));
-            content = content.replace("OwnerControllerSimpleTest", testSuiteName);
-            Files.write(testFile.toPath(), content.getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // write the test suite to the file
+        Files.write(testFile.toPath(), testSuiteContent.getBytes());
 
         // compile the class
-        // TODO 16.02.2023 Julien Di Tria
-        //  Check the return value of the compiler, and throw an exception if the compilation fails
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        compiler.run(null, null, null, testFile.getPath());
+        OutputStream out = new ByteArrayOutputStream();
+        OutputStream err = new ByteArrayOutputStream();
+        int result = compiler.run(null, out, err, testFile.getPath());
+        if (result != 0) {
+            logger.warn("Compilation failed with exit code '{}' while trying to compile the file '{}' containing the following code:\n{}",
+                result, testFile.getPath(), testSuiteContent);
+            logger.warn("Output: {}", out);
+            logger.warn("Error: {}", err);
+            throw new RuntimeException("Compilation failed with exit code " + result);
+        }
 
         // move file into classpath
-        // TODO 16.02.2023 Julien Di Tria
-        //  Find another path where to put the file, as this is not a safe way to do it, maybe use the classpath of the CUT
-        File folder =
-            new File(TestGenerationContext.getInstance().getClassLoaderForSUT().getClass().getProtectionDomain().getCodeSource().getLocation().getPath(), packagePath);
+        String folderPath = clazz.getProtectionDomain().getCodeSource().getLocation().getPath();
+        File folder = new File(folderPath, packagePath);
         folder.mkdirs();
         folder.deleteOnExit();
         File compiledFileInClasspath = new File(folder, testSuiteName + ".class");
