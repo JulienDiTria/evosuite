@@ -7,9 +7,13 @@ import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.evosuite.TestGenerationContext;
+import org.evosuite.utils.Randomness;
 import org.evosuite.utils.generic.GenericMethod;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
@@ -17,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -35,6 +40,7 @@ public class SpringSupport {
     private final RequestMappingHandlerMapping requestMappingHandlerMapping = new RequestMappingHandlerMapping();
     private SpringSetupRunner springSetupRunner;
     private MockMvc mockMvc;
+    private Map<RequestMappingInfo, HandlerMethod> handlerMethods;
 
     private SpringSupport() {
     }
@@ -59,10 +65,11 @@ public class SpringSupport {
     }
 
     /**
-     * Check if the class is a Spring Controller. If so, analyse it, generate an empty test execute it to set up the Spring context for the controller.
+     * Check if the class is a Spring Controller. If so, analyse it, generate a simple test suite, and execute it to set up the Spring
+     * context for the controller.
      * Does nothing otherwise.
      *
-     * @param className the class name to check
+     * @param className the name of the class to check
      */
     public static void setup(String className) {
         processCandidateController(className);
@@ -212,6 +219,16 @@ public class SpringSupport {
     }
 
     public static RequestMappingInfo getRequestMappingInfo() {
+        if (instance.springSetupRunner != null && instance.springSetupRunner.handlerMethods != null) {
+            Set<RequestMappingInfo> requestMappingInfos = instance.springSetupRunner.handlerMethods.keySet();
+            requestMappingInfos = requestMappingInfos.stream()
+                .filter(requestMappingInfo -> !requestMappingInfo.getMethodsCondition().getMethods().isEmpty())
+                .collect(Collectors.toSet());
+            if (!requestMappingInfos.isEmpty()) {
+                return Randomness.choice(requestMappingInfos);
+            }
+        }
+
         return instance.requestMappingHandlerMapping.getRequestMappingInfo();
     }
 

@@ -41,7 +41,7 @@ public class SpringTestFactory {
     public static TestCase createTestCaseForRequestMapping(RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
         TestCase tc = new DefaultTestCase();
         VariableReference requestBuilder = addRequestBuilder(tc, 0, requestMappingInfo);
-        VariableReference mvcResult = performAndGetResult(tc, tc.size(), requestBuilder);
+        VariableReference mvcResult = performAndGetResult(tc, tc.size()-1, requestBuilder);
         return tc;
     }
 
