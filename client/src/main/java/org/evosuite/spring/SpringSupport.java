@@ -37,7 +37,6 @@ public class SpringSupport {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final SpringSupport instance = new SpringSupport();
-    private final RequestMappingHandlerMapping requestMappingHandlerMapping = new RequestMappingHandlerMapping();
     private SpringSetupRunner springSetupRunner;
     private MockMvc mockMvc;
     private Map<RequestMappingInfo, HandlerMethod> handlerMethods;
@@ -45,23 +44,8 @@ public class SpringSupport {
     private SpringSupport() {
     }
 
-    /**
-     * Process the candidate controller which consists of
-     * <li>scanning the class for request mapping annotations</li>
-     * <li>registering the handler methods</li>
-     *
-     * @param controller the candidate controller
-     */
-    public static void processCandidateController(Object controller) {
-        instance.requestMappingHandlerMapping.processCandidateController(controller);
-    }
-
-    public static boolean isHandlerType(Object controller) {
-        return instance.requestMappingHandlerMapping.isHandlerType(controller);
-    }
-
-    public static RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
-        return instance.requestMappingHandlerMapping;
+    private static boolean isHandlerType(Object controller) {
+        return RequestMappingHandlerMapping.isHandlerType(controller);
     }
 
     /**
@@ -72,7 +56,6 @@ public class SpringSupport {
      * @param className the name of the class to check
      */
     public static void setup(String className) {
-        processCandidateController(className);
         if (isHandlerType(className)) {
             try {
                 // create empty test for spring controller
@@ -174,6 +157,7 @@ public class SpringSupport {
 
         instance.springSetupRunner.run(runNotifier);
         instance.mockMvc = instance.springSetupRunner.mockMvc;
+        instance.handlerMethods = instance.springSetupRunner.handlerMethods;
         assert (instance.mockMvc != null);
         System.out.println("MockMvc: " + instance.mockMvc);
         System.out.println("SpringSetupRunner executed");
@@ -208,19 +192,9 @@ public class SpringSupport {
         return instance.springSetupRunner != null;
     }
 
-    public static GenericMethod getMockMvcPerform() {
-        Method method = null;
-        try {
-            method = MockMvc.class.getMethod("perform", RequestBuilder.class);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-        return new GenericMethod(method, MockMvc.class);
-    }
-
     public static RequestMappingInfo getRequestMappingInfo() {
-        if (instance.springSetupRunner != null && instance.springSetupRunner.handlerMethods != null) {
-            Set<RequestMappingInfo> requestMappingInfos = instance.springSetupRunner.handlerMethods.keySet();
+        if (instance.handlerMethods != null) {
+            Set<RequestMappingInfo> requestMappingInfos = instance.handlerMethods.keySet();
             requestMappingInfos = requestMappingInfos.stream()
                 .filter(requestMappingInfo -> !requestMappingInfo.getMethodsCondition().getMethods().isEmpty())
                 .collect(Collectors.toSet());
@@ -229,7 +203,7 @@ public class SpringSupport {
             }
         }
 
-        return instance.requestMappingHandlerMapping.getRequestMappingInfo();
+        return RequestMappingHandlerMapping.getRequestMappingInfo();
     }
 
     public static void setMockMvc(MockMvc mockMvc) {

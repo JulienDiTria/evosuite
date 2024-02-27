@@ -160,7 +160,7 @@ public class SpringTestFactory {
 
         // add the "perform" statement
         length = test.size();
-        GenericMethod genericMethod = SpringSupport.getMockMvcPerform();
+        GenericMethod genericMethod = SmockMvc.getMockMvcPerform();
         VariableReference resultActions = TestFactory.getInstance().addMethodFor(test, mockMvc, genericMethod, position);
         position += (test.size() - length);
 
