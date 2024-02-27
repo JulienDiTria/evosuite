@@ -212,9 +212,6 @@ public class SpringClassTestContext {
             sb.append(name);
             sb.append(";");
             sb.append(NEWLINE);
-        }
-
-        if (!mockBeans.isEmpty()) {
             sb.append(NEWLINE);
         }
     }
