@@ -5,22 +5,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-import org.evosuite.TestGenerationContext;
 import org.evosuite.utils.Randomness;
-import org.evosuite.utils.generic.GenericMethod;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
@@ -192,7 +188,14 @@ public class SpringSupport {
         return instance.springSetupRunner != null;
     }
 
-    public static RequestMappingInfo getRequestMappingInfo() {
+    /**
+     * Get the handler methods from the handlerMethods after spring context setup is done.
+     * <p>
+     * If the handlerMethods instance is not set, it will return a mock RequestMappingInfo with a warning.
+     *
+     * @return a random RequestMappingInfo from the handler methods
+     */
+    public static RequestMappingInfo getRandomRequestMappingInfo() {
         if (instance.handlerMethods != null) {
             Set<RequestMappingInfo> requestMappingInfos = instance.handlerMethods.keySet();
             requestMappingInfos = requestMappingInfos.stream()

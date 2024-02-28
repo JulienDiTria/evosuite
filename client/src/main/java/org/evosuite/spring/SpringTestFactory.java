@@ -1,13 +1,11 @@
 package org.evosuite.spring;
 
-import java.util.HashMap;
 import org.evosuite.Properties;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.DefaultTestCase;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestFactory;
 import org.evosuite.testcase.variable.VariableReference;
-import org.evosuite.utils.Randomness;
 import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +116,7 @@ public class SpringTestFactory {
         assertRecursionDepth(recursionDepth);
 
         // get a random request mapping info from SpringSupport
-        RequestMappingInfo requestMappingInfo = SpringSupport.getRequestMappingInfo();
+        RequestMappingInfo requestMappingInfo = SpringSupport.getRandomRequestMappingInfo();
         if (requestMappingInfo == null) {
             logger.warn("No request mapping info available");
             return false;

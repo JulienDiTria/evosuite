@@ -13,9 +13,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.repository.Repository;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+
+import org.springframework.data.repository.RepositoryDefinition;
 
 public class SpringClassTestContext {
 
@@ -105,10 +108,24 @@ public class SpringClassTestContext {
         Class<?>[] parameterTypes = constructor.getParameterTypes();
         for (Class<?> parameterType : parameterTypes) {
             // check if the parameter is a bean that can come from spring using MockBean
-            if (Repository.class.isAssignableFrom(parameterType)) {
+            if (isRepository(parameterType)) {
                 mockBeans.add(parameterType);
             }
         }
+    }
+
+    /** Check if the parameter is a bean that is a spring repository.
+     * <p>
+     * This is simplified from {@link org.springframework.data.repository.config.RepositoryComponentProvider#RepositoryComponentProvider(java.lang.Iterable, org.springframework.beans.factory.support.BeanDefinitionRegistry)}
+     *
+     * @param parameterType the parameter type to be checked
+     * @return true if the parameter is a repository interface, false otherwise
+     */
+    private static boolean isRepository(Class<?> parameterType) {
+        boolean isInterface = parameterType.isInterface();
+        boolean isRepository = Repository.class.isAssignableFrom(parameterType);
+        boolean hasRepositoryAnnotation = AnnotationUtils.findAnnotation(parameterType, RepositoryDefinition.class) != null;
+        return isInterface && (isRepository || hasRepositoryAnnotation);
     }
 
     /**
