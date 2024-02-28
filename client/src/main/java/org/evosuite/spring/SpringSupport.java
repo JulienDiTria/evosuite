@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class SpringSupport {
     private SpringSetupRunner springSetupRunner;
     private MockMvc mockMvc;
     private Map<RequestMappingInfo, HandlerMethod> handlerMethods;
+    private SpringClassTestContext springClassTestContext;
 
     private SpringSupport() {
     }
@@ -83,8 +85,8 @@ public class SpringSupport {
         ClassLoader classLoader = logger.getClass().getClassLoader();
 
         // analyze the controller to create a suitable empty test class
-        SpringClassTestContext springClassTestContext = new SpringClassTestContext(clazz);
-        String testSuiteContent = springClassTestContext.createTestSuiteContent();
+        instance.springClassTestContext = new SpringClassTestContext(clazz);
+        String testSuiteContent = instance.springClassTestContext.createTestSuiteContent();
 
         // create empty test folder
         File tmpRoot = File.createTempFile("EvoSpring" + System.currentTimeMillis(), "");
@@ -95,7 +97,7 @@ public class SpringSupport {
         // create the files for source code and compiled class
         String packageName = clazz.getPackage().getName();
         String packagePath = packageName.replace(".", File.separator);
-        String testSuiteName = springClassTestContext.getTestSuiteName();
+        String testSuiteName = instance.springClassTestContext.getTestSuiteName();
         String className = packageName + "." + testSuiteName;
         File testFile = new File(tmpRoot, testSuiteName + ".java");
         File compiledFile = new File(tmpRoot, testSuiteName + ".class");
@@ -211,5 +213,22 @@ public class SpringSupport {
 
     public static void setMockMvc(MockMvc mockMvc) {
         instance.mockMvc = mockMvc;
+    }
+
+    public static Collection<Class<?>> getImports() {
+        return instance.springClassTestContext.getImports();
+    }
+
+    /**
+     * Add a spring runner to the given string builder when generating a testSuite into a string to write to file.
+     *
+     * @param builder the string builder to be used
+     */
+    public static void addRunner(StringBuilder builder){
+        instance.springClassTestContext.addRunner(builder);
+    }
+
+    public static void addFields(StringBuilder builder) {
+        instance.springClassTestContext.addFields(builder);
     }
 }

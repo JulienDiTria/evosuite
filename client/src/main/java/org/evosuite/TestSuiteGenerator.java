@@ -19,6 +19,7 @@
  */
 package org.evosuite;
 
+import java.util.stream.Collectors;
 import org.evosuite.Properties.AssertionStrategy;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.Properties.TestFactory;
@@ -672,15 +673,21 @@ public class TestSuiteGenerator {
         if (Properties.JUNIT_TESTS) {
             ClientServices.getInstance().getClientNode().changeState(ClientState.WRITING_TESTS);
 
-            TestSuiteWriter suiteWriter = new TestSuiteWriter();
-            suiteWriter.insertTests(tests);
-
             String name = Properties.TARGET_CLASS.substring(Properties.TARGET_CLASS.lastIndexOf(".") + 1);
             String testDir = Properties.TEST_DIR;
 
             LoggingUtils.getEvoLogger().info("* " + ClientProcess.getPrettyPrintIdentifier() + "Writing JUnit test case '"
-                    + (name + suffix) + "' to " + testDir);
+                + (name + suffix) + "' to " + testDir);
+
+            // Write standard JUnit tests
+            TestSuiteWriter suiteWriter = new TestSuiteWriter();
+            suiteWriter.insertTests(tests.stream().filter(t -> !t.usesSpring()).collect(Collectors.toList()));
             suiteWriter.writeTestSuite(name + suffix, testDir, testSuite.getLastExecutionResults());
+
+            // Write Spring related tests
+            TestSuiteWriter springSuiteWriter = new TestSuiteWriter(true);
+            suiteWriter.insertTests(tests.stream().filter(t -> t.usesSpring()).collect(Collectors.toList()));
+            springSuiteWriter.writeTestSuite(name + "_Spring" + suffix, testDir, testSuite.getLastExecutionResults());
         }
         return TestGenerationResultBuilder.buildSuccessResult();
     }

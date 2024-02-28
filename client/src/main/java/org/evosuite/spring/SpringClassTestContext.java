@@ -138,7 +138,7 @@ public class SpringClassTestContext {
 
         addPackage(sb);
         addImports(sb);
-        addTestSuiteAnnotations(sb);
+        addRunner(sb);
         addTestSuiteDefinition(sb);
 
         return sb.toString();
@@ -174,11 +174,11 @@ public class SpringClassTestContext {
     }
 
     /**
-     * Add the test suite annotations to the content (content is hold in the string builder)
+     * Add the test suite annotations to the content to run the test with SpringRunner and WebMvcTest
      *
      * @param sb the string builder to be used
      */
-    private void addTestSuiteAnnotations(StringBuilder sb) {
+    void addRunner(StringBuilder sb) {
         sb.append("@RunWith(SpringRunner.class)");
         sb.append(NEWLINE);
         sb.append("@WebMvcTest(");
@@ -211,24 +211,16 @@ public class SpringClassTestContext {
      *
      * @param sb the string builder to be used
      */
-    private void addFields(StringBuilder sb) {
-        sb.append("    @Autowired");
-        sb.append(NEWLINE);
-        sb.append("    private MockMvc mockMvc;");
-        sb.append(NEWLINE);
+    void addFields(StringBuilder sb) {
+        sb.append("    @Autowired").append(NEWLINE);
+        sb.append("    private MockMvc mockMvc;").append(NEWLINE);
         sb.append(NEWLINE);
 
         for (Class<?> mockBean : mockBeans) {
             String name = mockBean.getSimpleName();
             name = name.substring(0, 1).toLowerCase() + name.substring(1);
-            sb.append("    @MockBean");
-            sb.append(NEWLINE);
-            sb.append("    private ");
-            sb.append(mockBean.getSimpleName());
-            sb.append(" ");
-            sb.append(name);
-            sb.append(";");
-            sb.append(NEWLINE);
+            sb.append("    @MockBean").append(NEWLINE);
+            sb.append("    private ").append(mockBean.getSimpleName()).append(" ").append(name).append(";").append(NEWLINE);
             sb.append(NEWLINE);
         }
     }
@@ -258,5 +250,14 @@ public class SpringClassTestContext {
      */
     public String getTestSuiteName() {
         return testSuiteName;
+    }
+
+    /**
+     * Get the set of imports
+     *
+     * @return the set of imports
+     */
+    public Set<Class<?>> getImports() {
+        return imports;
     }
 }
