@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -216,6 +217,10 @@ public class SpringSupport {
     }
 
     public static Collection<Class<?>> getImports() {
+        if (instance.springClassTestContext == null) {
+            logger.warn("No springClassTestContext found to getImports, likely to not be a spring controller.");
+            return new ArrayList<>();
+        }
         return instance.springClassTestContext.getImports();
     }
 
@@ -225,10 +230,20 @@ public class SpringSupport {
      * @param builder the string builder to be used
      */
     public static void addRunner(StringBuilder builder){
-        instance.springClassTestContext.addRunner(builder);
+        if (instance.springClassTestContext != null) {
+            instance.springClassTestContext.addRunner(builder);
+        }
+        else {
+            logger.warn("No springClassTestContext found to add runner to the test suite");
+        }
     }
 
     public static void addFields(StringBuilder builder) {
-        instance.springClassTestContext.addFields(builder);
+        if (instance.springClassTestContext != null) {
+            instance.springClassTestContext.addFields(builder);
+        }
+        else {
+            logger.warn("No springClassTestContext found to add fields to the test suite");
+        }
     }
 }

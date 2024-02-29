@@ -16,6 +16,8 @@ import org.evosuite.utils.generic.GenericAccessibleObject;
 
 public class DeclarationStatement extends AbstractStatement {
 
+    private static final long serialVersionUID = 2051431241124468349L;
+
     private transient Object value = null;
 
     public DeclarationStatement(TestCase tc, VariableReference retval) throws IllegalArgumentException {

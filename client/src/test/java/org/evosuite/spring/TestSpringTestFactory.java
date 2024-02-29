@@ -81,8 +81,18 @@ public class TestSpringTestFactory {
         }
         if(!failed)
             fail("Test should have failed");
-
     }
+
+//    @Test
+//    public void testGeneratedTestSuccess(){
+//        MockHttpServletRequestBuilder mockHttpServletRequestBuilder0 = SmockRequestBuilder.request(HttpMethod.GET, "/owners/var0");
+//        MockMvc mockMvc0;
+//        ResultActions resultActions0 = mockMvc0.perform(mockHttpServletRequestBuilder0);
+//        MvcResult mvcResult0 = resultActions0.andReturn();
+//        StatusResultMatchers statusResultMatchers0 = MockMvcResultMatchers.status();
+//        ResultMatcher resultMatcher0 = statusResultMatchers0.is(200);
+//        resultMatcher0.match(mvcResult0);
+//    }
 
     private void executeEvoSuiteTestCase(TestCase testCase) {
         TestChromosome c = new TestChromosome();

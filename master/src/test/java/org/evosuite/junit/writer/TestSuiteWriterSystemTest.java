@@ -19,6 +19,7 @@
  */
 package org.evosuite.junit.writer;
 
+import com.examples.with.different.packagename.spring.petclinic.owner.OwnerController;
 import org.evosuite.EvoSuite;
 import org.evosuite.Properties;
 import org.evosuite.SystemTestBase;
@@ -40,33 +41,50 @@ public class TestSuiteWriterSystemTest extends SystemTestBase {
     @Test
     public void testSingleFile() {
         Properties.TEST_SCAFFOLDING = false;
-        test();
+        String targetClass = Foo.class.getCanonicalName();
+        test(targetClass);
     }
 
     @Test
     public void testScaffoldingFile() {
         Properties.TEST_SCAFFOLDING = true;
-        test();
+        String targetClass = Foo.class.getCanonicalName();
+        test(targetClass);
+    }
+
+    @Test
+    public void testSpringTest() {
+        Properties.TEST_SCAFFOLDING = false;
+        String targetClass = OwnerController.class.getCanonicalName();
+        test(targetClass);
+    }
+
+    @Test
+    public void testSpringTestScaffolding() {
+        Properties.TEST_SCAFFOLDING = true;
+        String targetClass = OwnerController.class.getCanonicalName();
+        test(targetClass);
     }
 
     @Test
     public void testWriteCoveredGoals() throws IOException {
         Properties.WRITE_COVERED_GOALS_FILE = true;
-        test();
+        String targetClass = Foo.class.getCanonicalName();
+        test(targetClass);
         Path path = Paths.get(Properties.COVERED_GOALS_FILE);
         Assert.assertTrue("Covered goals file does not exist", Files.exists(path));
         Assert.assertEquals("Covered goals file with 2 lines was expected", 2, Files.readAllLines(path).size());
     }
 
 
-    public void test() {
+    public void test(String targetClass) {
 
         Assert.assertNull(System.getSecurityManager());
 
-        String targetClass = Foo.class.getCanonicalName();
         Properties.TARGET_CLASS = targetClass;
         Properties.JUNIT_TESTS = true;
         Properties.JUNIT_CHECK = Properties.JUnitCheckValues.TRUE;
+        Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
 
         String[] command = new String[]{"-generateSuite", "-class", targetClass};
 

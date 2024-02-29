@@ -19,6 +19,7 @@
  */
 package org.evosuite.runtime.agent;
 
+import java.util.stream.Collectors;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import org.evosuite.runtime.util.JarPathing;
 import org.slf4j.Logger;
@@ -283,7 +284,7 @@ public class AgentLoader {
         }
 
         String msg = "Failed to find EvoSuite jar in current classloader. URLs of classloader:";
-        for (URI uri : uris) {
+        for (URI uri : uris.stream().sorted().collect(Collectors.toList())) {
             msg += "\n" + uri.toString();
         }
         logger.warn(msg);

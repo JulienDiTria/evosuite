@@ -46,6 +46,7 @@ import java.util.Set;
  */
 public class TestSuiteWriterUtils {
 
+    public static final String NEWLINE = System.lineSeparator();
     public static final String METHOD_SPACE = "  ";
     public static final String BLOCK_SPACE = "    ";
     public static final String INNER_BLOCK_SPACE = "      ";

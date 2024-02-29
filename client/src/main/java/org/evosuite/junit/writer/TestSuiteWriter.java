@@ -251,12 +251,32 @@ public class TestSuiteWriter implements Opcodes {
         // let's try to remove any remaining assertions. TODO: Better solution
         removeAssertionsAfterException(results);
 
+        if(testCases.isEmpty()){
+            if(usesSpring){
+                logger.warn("No spring test cases generated, not creating empty test for {}", name);
+            } else {
+                logger.warn("No test cases generated, not creating empty test for {}", name);
+            }
+        }
+        else {
+            logger.info("Writing test cases to file");
+            content = writeTestSuiteAndScaffolding(dir, name, results, generated );
+        }
 
-        if (Properties.OUTPUT_GRANULARITY == OutputGranularity.MERGED || testCases.size() == 0) {
+        writeCoveredGoalsFile();
+
+        TestGenerationResultBuilder.getInstance().setTestSuiteCode(content);
+        return generated;
+    }
+
+    private String writeTestSuiteAndScaffolding(String dir, String name, List<ExecutionResult> results, List<File> generated) {
+        StringBuilder content = new StringBuilder();
+        if (Properties.OUTPUT_GRANULARITY == OutputGranularity.MERGED) {
             File file = new File(dir + "/" + name + ".java");
             //executor.newObservers();
-            content = getUnitTestsAllInSameFile(name, results);
-            FileIOUtils.writeFile(content, file);
+            String testCode = getUnitTestsAllInSameFile(name, results);
+            FileIOUtils.writeFile(testCode, file);
+            content.append(testCode);
             generated.add(file);
         } else {
             for (int i = 0; i < testCases.size(); i++) {
@@ -264,7 +284,7 @@ public class TestSuiteWriter implements Opcodes {
                 //executor.newObservers();
                 String testCode = getOneUnitTestInAFile(name, i, results);
                 FileIOUtils.writeFile(testCode, file);
-                content += testCode;
+                content.append(testCode);
                 generated.add(file);
             }
         }
@@ -273,16 +293,13 @@ public class TestSuiteWriter implements Opcodes {
             String scaffoldingName = Scaffolding.getFileName(name);
             File file = new File(dir + "/" + scaffoldingName + ".java");
             String scaffoldingContent = Scaffolding.getScaffoldingFileContent(name, results,
-                    TestSuiteWriterUtils.hasAnySecurityException(results));
+                TestSuiteWriterUtils.hasAnySecurityException(results));
             FileIOUtils.writeFile(scaffoldingContent, file);
             generated.add(file);
-            content += scaffoldingContent;
+            content.append(scaffoldingContent);
         }
 
-        writeCoveredGoalsFile();
-
-        TestGenerationResultBuilder.getInstance().setTestSuiteCode(content);
-        return generated;
+        return content.toString();
     }
 
     /**

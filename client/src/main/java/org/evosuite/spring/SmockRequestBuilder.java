@@ -22,19 +22,17 @@
 
 package org.evosuite.spring;
 
-import com.sun.tools.javac.util.List;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Set;
 import org.evosuite.Properties;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.AssignmentStatement;
-import org.evosuite.testcase.statements.ConstructorStatement;
 import org.evosuite.testcase.statements.MethodStatement;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.ArrayIndex;
@@ -43,20 +41,12 @@ import org.evosuite.testcase.variable.ConstantValue;
 import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
 import org.evosuite.utils.generic.GenericClassFactory;
-import org.evosuite.utils.generic.GenericConstructor;
 import org.evosuite.utils.generic.GenericMethod;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.util.Assert;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.mvc.condition.NameValueExpression;
 import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -158,7 +148,7 @@ public class SmockRequestBuilder {
 
         // create the constructor statement
         GenericMethod genericMethod = new GenericMethod(method, MockMvcRequestBuilders.class);
-        Statement statement = new MethodStatement(tc, genericMethod, null, List.of(httpMethodValue, urlValue));
+        Statement statement = new MethodStatement(tc, genericMethod, null, Arrays.asList(httpMethodValue, urlValue));
 
         // add the statement to the test case
         return tc.addStatement(statement, position);
@@ -241,7 +231,7 @@ public class SmockRequestBuilder {
         }
         GenericMethod genericMethod = new GenericMethod(method, MockHttpServletRequestBuilder.class);
         VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-        MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, List.of(paramName, arrayRef), retVal);
+        MethodStatement statement = new MethodStatement(tc, genericMethod, requestBuilder, Arrays.asList(paramName, arrayRef), retVal);
         return tc.addStatement(statement, position+2);
     }
 
@@ -257,7 +247,7 @@ public class SmockRequestBuilder {
             new URI(url);
             return url;
         } catch (URISyntaxException e) {
-            logger.warn("Invalid URI: {}, depth {} ", url, recursionDepth);
+//            logger.warn("Invalid URI: {}, depth {} ", url, recursionDepth);
 
             if (recursionDepth < Properties.MAX_RECURSION) {
                 // add a variable for each path variable in the url

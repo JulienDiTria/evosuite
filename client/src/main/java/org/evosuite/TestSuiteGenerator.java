@@ -680,13 +680,15 @@ public class TestSuiteGenerator {
                 + (name + suffix) + "' to " + testDir);
 
             // Write standard JUnit tests
+            List<TestCase> standardTests = tests.stream().filter(t -> !t.usesSpring()).collect(Collectors.toList());
             TestSuiteWriter suiteWriter = new TestSuiteWriter();
-            suiteWriter.insertTests(tests.stream().filter(t -> !t.usesSpring()).collect(Collectors.toList()));
+            suiteWriter.insertTests(standardTests);
             suiteWriter.writeTestSuite(name + suffix, testDir, testSuite.getLastExecutionResults());
 
             // Write Spring related tests
+            List<TestCase> springTests = tests.stream().filter(t -> t.usesSpring()).collect(Collectors.toList());
             TestSuiteWriter springSuiteWriter = new TestSuiteWriter(true);
-            suiteWriter.insertTests(tests.stream().filter(t -> t.usesSpring()).collect(Collectors.toList()));
+            suiteWriter.insertTests(springTests);
             springSuiteWriter.writeTestSuite(name + "_Spring" + suffix, testDir, testSuite.getLastExecutionResults());
         }
         return TestGenerationResultBuilder.buildSuccessResult();

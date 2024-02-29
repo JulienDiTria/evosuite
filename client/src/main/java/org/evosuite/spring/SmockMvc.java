@@ -22,8 +22,8 @@
 
 package org.evosuite.spring;
 
-import com.sun.tools.javac.util.List;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.TestCase;
@@ -89,7 +89,7 @@ public class SmockMvc {
         // create the method statement parameters
         GenericMethod genericMethod = new GenericMethod(method, MockMvc.class);
         VariableReference retVal = new VariableReferenceImpl(tc, genericMethod.getReturnType());
-        MethodStatement statement = new MethodStatement(tc, genericMethod, mockMvc, List.of(requestBuilder), retVal);
+        MethodStatement statement = new MethodStatement(tc, genericMethod, mockMvc, Collections.singletonList(requestBuilder), retVal);
 
         // add the statement to the test case
         return tc.addStatement(statement, position);

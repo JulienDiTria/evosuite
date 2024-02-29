@@ -1,6 +1,5 @@
 package org.evosuite.spring;
 
-import com.sun.tools.javac.util.List;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import org.evosuite.ga.ConstructionFailedException;
@@ -94,7 +93,7 @@ public class SmockMvcResultMatchers {
 
         GenericMethod genericMethod = new GenericMethod(method, StatusResultMatchers.class);
         VariableReference resultMatcher = new VariableReferenceImpl(testCase, genericMethod.getReturnType());
-        MethodStatement statement = new MethodStatement(testCase, genericMethod, specificResultMatcher, List.of(statusValue), resultMatcher);
+        MethodStatement statement = new MethodStatement(testCase, genericMethod, specificResultMatcher, Collections.singletonList(statusValue), resultMatcher);
 
         return testCase.addStatement(statement, position);
     }
@@ -121,7 +120,7 @@ public class SmockMvcResultMatchers {
 
         GenericMethod genericMethod = new GenericMethod(method, ResultMatcher.class);
         VariableReference match = new VariableReferenceImpl(testCase, genericMethod.getReturnType());
-        MethodStatement statement = new MethodStatement(testCase, genericMethod, resultMatcher, List.of(mvcResult), match);
+        MethodStatement statement = new MethodStatement(testCase, genericMethod, resultMatcher, Collections.singletonList(mvcResult), match);
 
         return testCase.addStatement(statement, position);
     }
