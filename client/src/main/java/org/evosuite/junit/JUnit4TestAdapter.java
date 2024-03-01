@@ -29,6 +29,8 @@ import org.evosuite.testcase.TestCodeVisitor;
 import java.util.List;
 import java.util.Map;
 
+import static org.evosuite.junit.writer.TestSuiteWriterUtils.NEWLINE;
+
 /**
  * <p>
  * JUnit4TestAdapter class.
@@ -121,11 +123,11 @@ public class JUnit4TestAdapter implements UnitTestAdapter {
     @Override
     public String getMethodDefinition(String testName) {
         StringBuilder builder = new StringBuilder();
-        builder.append("  @" + getJUnitTestShortName());
+        builder.append("@" + getJUnitTestShortName());
         //TODO remove once JUnit is fixed. See comments in Scaffolding regarding Timeout rule
         builder.append("(timeout = " + (Properties.TIMEOUT + 1000) + ")");
-        builder.append("\n");
-        builder.append("  public void " + testName + "() ");
+        builder.append(NEWLINE);
+        builder.append("public void " + testName + "()");
         return builder.toString();
     }
 

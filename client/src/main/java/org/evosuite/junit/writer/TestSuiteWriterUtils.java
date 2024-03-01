@@ -56,6 +56,10 @@ public class TestSuiteWriterUtils {
     protected final static Logger logger = LoggerFactory.getLogger(TestSuiteWriterUtils.class);
 
 
+    public static void addLine(StringBuilder stringBuilder, LineIndent lineIndent, String line){
+        stringBuilder.append(lineIndent).append(line).append(NEWLINE);
+    }
+
     /**
      * Check the configuration settings to see if we are doing any instrumentation.
      * If so, we ll need to use the Java Agent in the generated tests

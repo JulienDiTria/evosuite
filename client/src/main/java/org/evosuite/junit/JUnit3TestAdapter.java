@@ -68,7 +68,7 @@ public class JUnit3TestAdapter implements UnitTestAdapter {
      */
     @Override
     public String getMethodDefinition(String testName) {
-        return "public void " + testName + "() ";
+        return "public void " + testName + "()";
     }
 
     /* (non-Javadoc)

@@ -30,6 +30,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.util.List;
 import java.util.Map;
 
+import static org.evosuite.junit.writer.TestSuiteWriterUtils.NEWLINE;
+
 /**
  * Used to adapt the internal representations of test suites to JUnit 5 test cases
  */
@@ -125,8 +127,8 @@ public class JUnit5TestAdapter implements UnitTestAdapter {
     @Override
     public String getMethodDefinition(String testName) {
         //TODO remove once JUnit is fixed. See comments in Scaffolding regarding Timeout rule
-        return "  @" + getJUnitTestShortName() + "\n  " + getTimeoutAnnotation()
-                + "\n" + "  public void " + testName + "() ";
+        return "@" + getJUnitTestShortName() + NEWLINE + getTimeoutAnnotation()
+                + NEWLINE + "public void " + testName + "()";
     }
 
     /* (non-Javadoc)
