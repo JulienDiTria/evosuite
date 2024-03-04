@@ -20,7 +20,7 @@ public class OwnerControllerSimpleTest {
 
     @Test
     public void test0() {
-        System.out.println("testStatusOkShort");
+        System.out.println("test0");
         assert(true);
     }
 }

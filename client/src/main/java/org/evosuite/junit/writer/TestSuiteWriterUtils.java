@@ -60,6 +60,15 @@ public class TestSuiteWriterUtils {
         stringBuilder.append(lineIndent).append(line).append(NEWLINE);
     }
 
+    public static void addMultiLines(StringBuilder stringBuilder, LineIndent lineIndent, String multiLines) {
+        if(multiLines == null || multiLines.isEmpty()){
+            return;
+        }
+        for(String line : multiLines.split(NEWLINE)){
+            addLine(stringBuilder, lineIndent, line);
+        }
+    }
+
     /**
      * Check the configuration settings to see if we are doing any instrumentation.
      * If so, we ll need to use the Java Agent in the generated tests

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.evosuite.junit.writer.TestSuiteWriterUtils.NEWLINE;
 import static org.evosuite.junit.writer.TestSuiteWriterUtils.addLine;
+import static org.evosuite.junit.writer.TestSuiteWriterUtils.addMultiLines;
 
 public class TestSuite {
     private static final Logger logger = LoggerFactory.getLogger(TestSuite.class);
@@ -67,20 +68,24 @@ public class TestSuite {
     }
 
     private void addHeader(StringBuilder stringBuilder) {
-        TestSuiteWriter.addEvoSuiteHeader(stringBuilder);
+        StringBuilder headerBuilder = new StringBuilder();
+        TestSuiteWriter.addEvoSuiteHeader(headerBuilder);
+        String header = headerBuilder.toString();
+
+        addMultiLines(stringBuilder, lineIndent, header);
     }
 
     private void addPackage(StringBuilder stringBuilder) {
         logger.warn("Should use package instead of Properties.CLASS_PREFIX");
 //        stringBuilder.append("package ").append(pkg.getName()).append(";").append(NEWLINE);
-        stringBuilder.append("package ").append(Properties.CLASS_PREFIX).append(";").append(NEWLINE).append(NEWLINE);
+        stringBuilder.append(lineIndent).append("package ").append(Properties.CLASS_PREFIX).append(";").append(NEWLINE).append(NEWLINE);
     }
 
     private void addImports(StringBuilder stringBuilder) {
         // normal imports
         if(!imports.isEmpty()){
             for (String imprt : imports.stream().map(ImportHelper::classComparison).collect(Collectors.toList())) {
-                stringBuilder.append("import ").append(imprt).append(";").append(NEWLINE);
+                stringBuilder.append(lineIndent).append("import ").append(imprt).append(";").append(NEWLINE);
             }
             stringBuilder.append(NEWLINE);
         }
@@ -92,7 +97,7 @@ public class TestSuite {
 
         if(!staticImports.isEmpty()){
             for (String imprt : staticImports) {
-                stringBuilder.append("import static ").append(imprt).append(";").append(NEWLINE);
+                stringBuilder.append(lineIndent).append("import static ").append(imprt).append(";").append(NEWLINE);
             }
             stringBuilder.append(NEWLINE);
         }
@@ -118,9 +123,10 @@ public class TestSuite {
     }
 
     private void addClassDefinition(StringBuilder stringBuilder) {
+        stringBuilder.append(lineIndent);
         stringBuilder.append(adapter.getClassDefinition(name));
-        stringBuilder.append(testSuiteClassExtensions.toCode(lineIndent));
-        stringBuilder.append(" {").append(NEWLINE);
+        stringBuilder.append(testSuiteClassExtensions.toCode());
+        stringBuilder.append(" {").append(NEWLINE).append(NEWLINE);
     }
 
     private void addClassFields(StringBuilder stringBuilder) {
@@ -128,16 +134,21 @@ public class TestSuite {
             for (ClassField field : classFields){
                 stringBuilder.append(field.toCode(lineIndent));
             }
-            stringBuilder.append(NEWLINE);
+            stringBuilder.append(lineIndent).append(NEWLINE);
         }
     }
 
     private void addClassMethods(StringBuilder stringBuilder) {
         if(!testCases.isEmpty()){
+            boolean first = true;
             for (Test testCase : testCases){
+                if(first){
+                    first = false;
+                } else {
+                    addLine(stringBuilder, lineIndent, "");
+                }
                 stringBuilder.append(testCase.toCode(lineIndent));
             }
-            stringBuilder.append(NEWLINE);
         }
     }
 

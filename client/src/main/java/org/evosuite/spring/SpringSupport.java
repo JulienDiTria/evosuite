@@ -123,6 +123,7 @@ public class SpringSupport {
         }
 
         // move file into classpath
+        // TODO 2023.03.04 Julien Di Tria : use the test directory instead of java source directory
         String folderPath = clazz.getProtectionDomain().getCodeSource().getLocation().getPath();
         File folder = new File(folderPath, packagePath);
         folder.mkdirs();

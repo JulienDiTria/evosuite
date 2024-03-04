@@ -21,6 +21,8 @@ import static org.evosuite.junit.writer.TestSuiteWriterUtils.INNER_BLOCK_SPACE;
 import static org.evosuite.junit.writer.TestSuiteWriterUtils.INNER_INNER_BLOCK_SPACE;
 import static org.evosuite.junit.writer.TestSuiteWriterUtils.INNER_INNER_INNER_BLOCK_SPACE;
 import static org.evosuite.junit.writer.TestSuiteWriterUtils.NEWLINE;
+import static org.evosuite.junit.writer.TestSuiteWriterUtils.addLine;
+import static org.evosuite.junit.writer.TestSuiteWriterUtils.addMultiLines;
 
 public class Test {
 
@@ -53,11 +55,16 @@ public class Test {
 
     public Test(ExecutionResult executionResult, LineIndent lineIndent, String name){
         this.executionResult = executionResult;
-        this.lineIndent = lineIndent;
         this.name = name;
     }
 
-    public String toCode(){
+    public String toCode() {
+        return toCode(new LineIndent());
+    }
+
+    public String toCode(LineIndent lineIndent){
+        this.lineIndent = lineIndent;
+
         StringBuilder stringBuilder = new StringBuilder();
 
         addComments(stringBuilder);
@@ -75,19 +82,21 @@ public class Test {
 
     private void addAnnotations(StringBuilder stringBuilder) {
         for (MethodAnnotation annotation : testAnnotation) {
-            stringBuilder.append(lineIndent).append(annotation.toCode());
+            addLine(stringBuilder, lineIndent, annotation.toCode());
         }
     }
 
     private void addMethod(StringBuilder stringBuilder) {
         addMethodDefinition(stringBuilder);
+        lineIndent.increase();
         addBody(stringBuilder);
+        lineIndent.decrease();
         addFooter(stringBuilder);
     }
 
     private void addMethodDefinition(StringBuilder stringBuilder) {
-        stringBuilder.append(lineIndent).append(adapter.getMethodDefinition(name));
-        stringBuilder.append(" throws Throwable {").append(NEWLINE);
+        String methodDefinitionBuilder = adapter.getMethodDefinition(name) + " throws Throwable {" + NEWLINE;
+        addMultiLines(stringBuilder, lineIndent, methodDefinitionBuilder);
     }
 
     private void addBody(StringBuilder stringBuilder) {
@@ -121,7 +130,6 @@ public class Test {
     }
 
     private void addTest(StringBuilder stringBuilder) {
-        lineIndent.increase();
         for (String line : adapter.getTestString(0, executionResult.test, executionResult.exposeExceptionMapping(), visitor).split("\\r"
             + "?\\n")) {
             stringBuilder.append(lineIndent);
@@ -163,7 +171,7 @@ public class Test {
     }
 
     private void addFooter(StringBuilder stringBuilder) {
-        stringBuilder.append(lineIndent.decrease()).append("}").append(NEWLINE);
+        stringBuilder.append(lineIndent).append("}").append(NEWLINE);
     }
 
     // region helper to prepare test
