@@ -20,6 +20,8 @@
 
 package org.evosuite.junit;
 
+import java.util.Collection;
+import java.util.Collections;
 import org.evosuite.junit.writer.TestSuiteWriterUtils;
 import org.evosuite.runtime.vnet.NonFunctionalRequirementRule;
 import org.evosuite.testcase.TestCase;
@@ -43,8 +45,20 @@ public class JUnit3TestAdapter implements UnitTestAdapter {
      * {@inheritDoc}
      */
     @Override
-    public String getImports() {
-        return "import junit.framework.TestCase;\n";
+    public Collection<String> getImports() {
+        return Collections.singletonList("junit.framework.TestCase");
+    }
+
+    /* (non-Javadoc)
+     * @see org.evosuite.junit.UnitTestAdapter#getImports()
+     */
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<String> getStaticImports() {
+        return Collections.emptyList();
     }
 
     /* (non-Javadoc)
@@ -64,7 +78,7 @@ public class JUnit3TestAdapter implements UnitTestAdapter {
      */
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc§}
      */
     @Override
     public String getMethodDefinition(String testName) {

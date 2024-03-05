@@ -8,11 +8,15 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import org.evosuite.junit.ClassField;
+import org.evosuite.junit.EvoAnnotation;
 import org.evosuite.utils.Randomness;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
@@ -244,7 +248,27 @@ public class SpringSupport {
             instance.springClassTestContext.addFields(builder);
         }
         else {
-            logger.warn("No springClassTestContext found to add fields to the test suite");
+            logger.warn("addFields : No springClassTestContext found to add fields to the test suite");
+        }
+    }
+
+    public static List<EvoAnnotation> getClassAnnotations() {
+        if (instance.springClassTestContext != null) {
+            return instance.springClassTestContext.getClassAnnotations();
+        }
+        else {
+            logger.warn("getClassAnnotations : No springClassTestContext found to add class level annotation to the test suite");
+            return Collections.emptyList();
+        }
+    }
+
+    public static Collection<ClassField> getClassFields() {
+        if (instance.springClassTestContext != null) {
+            return instance.springClassTestContext.getClassFields();
+        }
+        else {
+            logger.warn("getClassFields : No springClassTestContext found to add class level fields to the test suite");
+            return Collections.emptyList();
         }
     }
 }

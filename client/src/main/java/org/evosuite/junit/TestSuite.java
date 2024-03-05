@@ -1,11 +1,10 @@
 package org.evosuite.junit;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -14,6 +13,7 @@ import org.evosuite.Properties;
 import org.evosuite.junit.writer.LineIndent;
 import org.evosuite.junit.writer.TestSuiteWriter;
 import org.evosuite.junit.writer.TestSuiteWriterUtils;
+import org.evosuite.spring.SpringSupport;
 import org.evosuite.testcase.execution.ExecutionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,10 +27,9 @@ public class TestSuite {
 
     // region class data
     private Package pkg;
-    private SortedSet<Class<?>> imports = new TreeSet<>(Comparator.comparing(ImportHelper::classComparison));
-    private SortedSet<Method> staticMethodImports = new TreeSet<>(Comparator.comparing(ImportHelper::methodComparison));
-    private SortedSet<Field> staticFieldImports = new TreeSet<>(Comparator.comparing(ImportHelper::fieldComparison));
-    private SortedSet<Annotation> testSuiteClassAnnotations = new TreeSet<>();
+    private final SortedSet<String> imports = new TreeSet<>();
+    private final SortedSet<String> staticImports = new TreeSet<>();
+    private final List<EvoAnnotation> testSuiteClassEvoAnnotations = new ArrayList<>();
     private final String name;
     private ClassExtensions testSuiteClassExtensions = new ClassExtensions();
     private Set<ClassField> classFields = new HashSet<>();
@@ -49,6 +48,33 @@ public class TestSuite {
     public TestSuite(String name, Collection<ExecutionResult> executionResults) {
         this.name = name;
         this.testCases.addAll(executionResults.stream().map(Test::new).collect(Collectors.toList()));
+
+        analyze();
+    }
+
+    private void analyze() {
+        // check if using Spring runner or EvoSuite runner
+        analyzeTestSuiteClassAnnotations();
+
+        // analyze the adapter
+        imports.addAll(adapter.getImports());
+        staticImports.addAll(adapter.getStaticImports());
+
+        // analyze the tests
+        for (Test test : testCases) {
+            imports.addAll(test.getImports());
+            staticImports.addAll(test.getStaticImports());
+            classFields.addAll(test.getClassFields());
+        }
+    }
+
+    private void analyzeTestSuiteClassAnnotations() {
+        if(testCases.stream().allMatch(test -> test.getExecutionResult().test.usesSpring())){
+            testSuiteClassEvoAnnotations.addAll(SpringSupport.getClassAnnotations());
+        }
+        else if (TestSuiteWriterUtils.needToUseAgent() && !Properties.NO_RUNTIME_DEPENDENCY) {
+            testSuiteClassEvoAnnotations.addAll(TestSuiteWriter.getEvoRunnerAnnotation());
+        }
     }
 
     public String toCode(){
@@ -84,17 +110,13 @@ public class TestSuite {
     private void addImports(StringBuilder stringBuilder) {
         // normal imports
         if(!imports.isEmpty()){
-            for (String imprt : imports.stream().map(ImportHelper::classComparison).collect(Collectors.toList())) {
+            for (String imprt : imports) {
                 stringBuilder.append(lineIndent).append("import ").append(imprt).append(";").append(NEWLINE);
             }
             stringBuilder.append(NEWLINE);
         }
 
         // static imports
-        Set<String> staticImports = new TreeSet<>(Comparator.comparing(String::toString));
-        staticImports.addAll(staticMethodImports.stream().map(ImportHelper::methodComparison).collect(Collectors.toList()));
-        staticImports.addAll(staticFieldImports.stream().map(ImportHelper::fieldComparison).collect(Collectors.toList()));
-
         if(!staticImports.isEmpty()){
             for (String imprt : staticImports) {
                 stringBuilder.append(lineIndent).append("import static ").append(imprt).append(";").append(NEWLINE);
@@ -114,9 +136,9 @@ public class TestSuite {
     }
 
     private void addClassAnnotation(StringBuilder stringBuilder) {
-        if(!testSuiteClassAnnotations.isEmpty()){
-            for (Annotation annotation : testSuiteClassAnnotations){
-                stringBuilder.append(annotation.toCode(lineIndent));
+        if(!testSuiteClassEvoAnnotations.isEmpty()){
+            for (EvoAnnotation evoAnnotation : testSuiteClassEvoAnnotations){
+                stringBuilder.append(evoAnnotation.toCode(lineIndent));
             }
             stringBuilder.append(NEWLINE);
         }
@@ -165,40 +187,31 @@ public class TestSuite {
         this.pkg = pkg;
     }
 
-    public Set<Class<?>> getImports() {
+    public Set<String> getImports() {
         return imports;
     }
 
-    public void setImports(Collection<Class<?>> imports) {
+    public void setImports(Collection<String> imports) {
         this.imports.clear();
         this.imports.addAll(imports);
     }
 
-    public Set<Method> getStaticMethodImports() {
-        return staticMethodImports;
+    public Set<String> getStaticImports() {
+        return staticImports;
     }
 
-    public void setStaticMethodImports(Collection<Method> staticMethodImports) {
-        this.staticMethodImports.clear();
-        this.staticMethodImports.addAll(staticMethodImports);
+    public void setStaticMethodImports(Collection<String> staticImports) {
+        this.staticImports.clear();
+        this.staticImports.addAll(staticImports);
     }
 
-    public Set<Field> getStaticFieldImports() {
-        return staticFieldImports;
+    public List<EvoAnnotation> getTestSuiteClassAnnotation() {
+        return testSuiteClassEvoAnnotations;
     }
 
-    public void setStaticFieldImports(Collection<Field> staticFieldImports) {
-        this.staticFieldImports.clear();
-        this.staticFieldImports.addAll(staticFieldImports);
-    }
-
-    public Set<Annotation> getTestSuiteClassAnnotation() {
-        return testSuiteClassAnnotations;
-    }
-
-    public void setTestSuiteClassAnnotation(Collection<Annotation> testSuiteClassAnnotations) {
-        this.testSuiteClassAnnotations.clear();
-        this.testSuiteClassAnnotations.addAll(testSuiteClassAnnotations);
+    public void setTestSuiteClassAnnotation(List<EvoAnnotation> testSuiteClassEvoAnnotations) {
+        this.testSuiteClassEvoAnnotations.clear();
+        this.testSuiteClassEvoAnnotations.addAll(testSuiteClassEvoAnnotations);
     }
 
     public String getName() {

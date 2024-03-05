@@ -20,6 +20,9 @@
 
 package org.evosuite.junit;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import org.evosuite.Properties;
 import org.evosuite.junit.writer.TestSuiteWriterUtils;
 import org.evosuite.runtime.vnet.NonFunctionalRequirementRule;
@@ -90,15 +93,26 @@ public class JUnit4TestAdapter implements UnitTestAdapter {
      * {@inheritDoc}
      */
     @Override
-    public String getImports() {
-        String imports = "";
+    public Collection<String> getImports() {
+        ArrayList<String> imports = new ArrayList<>();
         if ((Properties.ECLIPSE_PLUGIN) && (!Properties.TARGET_CLASS.equals("EvoSuiteTest")))
-            imports += "import " + org.evosuite.annotations.EvoSuiteTest.class.getName() + ";\n";
+            imports.add(org.evosuite.annotations.EvoSuiteTest.class.getName());
         if (!Properties.TARGET_CLASS.equals("Test"))
-            imports += "import org.junit.Test;\n";
-        imports += "import static org.junit.Assert.*;\n";
+            imports.add("org.junit.Test");
 
         return imports;
+    }
+
+    /* (non-Javadoc)
+     * @see org.evosuite.junit.UnitTestAdapter#getImports()
+     */
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<String> getStaticImports() {
+        return Collections.singletonList("org.junit.Assert.*");
     }
 
     /* (non-Javadoc)

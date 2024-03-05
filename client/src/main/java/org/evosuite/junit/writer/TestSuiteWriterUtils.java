@@ -80,13 +80,11 @@ public class TestSuiteWriterUtils {
                 || Properties.RESET_STATIC_FIELDS || Properties.VIRTUAL_NET;
     }
 
-
     public static boolean doesUseMocks(List<ExecutionResult> results) {
         for (ExecutionResult er : results) {
-            for (Statement st : er.test) {
-                if (st instanceof FunctionalMockStatement) {
-                    return true;
-                }
+            if(er.doesUseMocks()){
+                return true;
+
             }
         }
         return false;

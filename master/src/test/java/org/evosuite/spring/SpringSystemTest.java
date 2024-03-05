@@ -17,6 +17,7 @@ public class SpringSystemTest extends SystemTestBase {
     @Test
     public void testSpringController() throws IOException {
         Properties.ALGORITHM = Properties.Algorithm.MONOTONIC_GA;
+        Properties.JUNIT_TESTS = true;
 
         EvoSuite evosuite = new EvoSuite();
 

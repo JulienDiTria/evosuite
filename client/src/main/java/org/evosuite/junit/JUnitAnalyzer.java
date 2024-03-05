@@ -111,6 +111,7 @@ public abstract class JUnitAnalyzer {
             try {
                 List<TestCase> singleList = new ArrayList<>();
                 singleList.add(test);
+                logger.warn("Compiling test case: \n " + test.toCode());
                 List<File> generated = compileTests(singleList, dir);
                 if (generated == null) {
                     iter.remove();
@@ -306,8 +307,32 @@ public abstract class JUnitAnalyzer {
     private static int NUM = 0;
 
     private static List<File> compileTests(List<TestCase> tests, File dir) {
+        List<TestCase> standardTests = tests.stream().filter(t -> !t.usesSpring()).collect(Collectors.toList());
+        List<TestCase> springTests = tests.stream().filter(TestCase::usesSpring).collect(Collectors.toList());
 
-        TestSuiteWriter suite = new TestSuiteWriter();
+        List<File> generated = new ArrayList<>();
+        List<File> standardGenerated = compileTests(standardTests, dir, false);
+        List<File> springGenerated = compileTests(springTests, dir, true);
+
+        if (standardGenerated != null) {
+            generated.addAll(standardGenerated);
+        }
+
+        if (springGenerated != null) {
+            generated.addAll(springGenerated);
+        }
+
+        if (generated.isEmpty()) {
+            return null;
+        }
+        else {
+            return generated;
+        }
+    }
+
+    private static List<File> compileTests(List<TestCase> tests, File dir, boolean usesSpring) {
+
+        TestSuiteWriter suite = new TestSuiteWriter(usesSpring);
         suite.insertAllTests(tests);
 
         //to get name, remove all package before last '.'

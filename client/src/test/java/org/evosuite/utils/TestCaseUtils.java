@@ -20,8 +20,7 @@ public class TestCaseUtils {
 
     private static TestCase testCaseForDoubleInternal() throws NoSuchMethodException {
         TestCaseBuilder builder = new TestCaseBuilder();
-        ArrayReference doubleArray0 = builder.appendArrayStmt(Double[].class,
-            10);
+        ArrayReference doubleArray0 = builder.appendArrayStmt(Double[].class, 10);
         VariableReference double0 = builder.appendNull(Double.class);
         builder.appendAssignment(doubleArray0, 0, double0);
         builder.appendAssignment(double0, doubleArray0, 0);
@@ -96,4 +95,5 @@ public class TestCaseUtils {
         SpringTestFactory.insertRandomSpringCall(testCase, 0);
         return testCase;
     }
+
 }

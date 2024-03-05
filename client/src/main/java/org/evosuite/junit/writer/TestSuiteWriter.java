@@ -20,11 +20,15 @@
 
 package org.evosuite.junit.writer;
 
+import java.lang.System;
+import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.util.Strings;
 import org.evosuite.Properties;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.Properties.OutputGranularity;
 import org.evosuite.TimeController;
 import org.evosuite.coverage.dataflow.DefUseCoverageTestFitness;
+import org.evosuite.junit.EvoAnnotation;
 import org.evosuite.junit.UnitTestAdapter;
 import org.evosuite.junit.naming.methods.CoverageGoalTestNameGenerationStrategy;
 import org.evosuite.junit.naming.methods.NumberedTestNameGenerationStrategy;
@@ -270,6 +274,11 @@ public class TestSuiteWriter implements Opcodes {
     }
 
     private String writeTestSuiteAndScaffolding(String dir, String name, List<ExecutionResult> results, List<File> generated) {
+        if(results.stream().anyMatch(result -> result.test.usesSpring())) {
+            logger.warn("Spring test cases detected, using SpringSetupRunner");
+        }
+
+
         StringBuilder content = new StringBuilder();
         if (Properties.OUTPUT_GRANULARITY == OutputGranularity.MERGED) {
             File file = new File(dir + "/" + name + ".java");
@@ -582,7 +591,19 @@ public class TestSuiteWriter implements Opcodes {
     }
 
     private void addImports(StringBuilder builder, List<ExecutionResult> results) {
-        builder.append(adapter.getImports());
+        for(String imp : adapter.getImports()){
+            builder.append("import ");
+            builder.append(imp);
+            builder.append(";");
+            builder.append(NEWLINE);
+        }
+        for(String imp : adapter.getStaticImports()){
+            builder.append("import static ");
+            builder.append(imp);
+            builder.append(";");
+            builder.append(NEWLINE);
+        }
+
         builder.append(getImports(results));
     }
 
@@ -590,7 +611,7 @@ public class TestSuiteWriter implements Opcodes {
         if (usesSpring){
             SpringSupport.addRunner(builder);
         } else if (TestSuiteWriterUtils.needToUseAgent() && !Properties.NO_RUNTIME_DEPENDENCY) {
-            builder.append(getRunner());
+            builder.append(getRunner() + NEWLINE);
         }
     }
 
@@ -614,11 +635,16 @@ public class TestSuiteWriter implements Opcodes {
 
     }
 
-    private Object getRunner() {
-        String s = Properties.TEST_FORMAT == Properties.OutputFormat.JUNIT5 ? "@EvoRunnerParameters("
-                : "@RunWith(EvoRunner.class) @EvoRunnerParameters(";
-        List<String> list = new ArrayList<>();
+    public static List<EvoAnnotation> getEvoRunnerAnnotation(){
+        return Collections.singletonList(new EvoAnnotation(getRunner()));
+    }
 
+    private static String getRunner() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(Properties.TEST_FORMAT == Properties.OutputFormat.JUNIT5 ? "@EvoRunnerParameters("
+                : "@RunWith(EvoRunner.class) @EvoRunnerParameters(");
+
+        List<String> list = new ArrayList<>();
         if (Properties.REPLACE_CALLS) {
             list.add("mockJVMNonDeterminism = true");
         }
@@ -643,17 +669,9 @@ public class TestSuiteWriter implements Opcodes {
             list.add("mockGUI = true");
         }
 
-        if (!list.isEmpty()) {
-            s += list.get(0);
-
-            for (int i = 1; i < list.size(); i++) {
-                s += ", " + list.get(i);
-            }
-        }
-
-        s += ") " + NEWLINE;
-
-        return s;
+        builder.append(StringUtils.join(list, ", "));
+        builder.append(")");
+        return builder.toString();
     }
 
     /**

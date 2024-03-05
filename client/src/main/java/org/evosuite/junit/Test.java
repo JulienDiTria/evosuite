@@ -3,6 +3,8 @@ package org.evosuite.junit;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -12,6 +14,7 @@ import org.evosuite.Properties;
 import org.evosuite.junit.writer.LineIndent;
 import org.evosuite.junit.writer.Scaffolding;
 import org.evosuite.junit.writer.TestSuiteWriterUtils;
+import org.evosuite.spring.SpringSupport;
 import org.evosuite.testcase.TestCodeVisitor;
 import org.evosuite.testcase.execution.CodeUnderTestException;
 import org.evosuite.testcase.execution.ExecutionResult;
@@ -32,9 +35,8 @@ public class Test {
 
     // region helpers
     private Package pkg;
-    private Set<Class<?>> imports = new TreeSet<>(Comparator.comparing(ImportHelper::classComparison));
-    private Set<Method> staticMethodImports = new TreeSet<>(Comparator.comparing(ImportHelper::methodComparison));
-    private Set<Field> staticFieldImports = new TreeSet<>(Comparator.comparing(ImportHelper::fieldComparison));
+    private final Set<String> imports = new TreeSet<>();
+    private final Set<String> staticImports = new TreeSet<>();
     // endregion
 
     // region formatting helper
@@ -56,8 +58,17 @@ public class Test {
     public Test(ExecutionResult executionResult, LineIndent lineIndent, String name){
         this.executionResult = executionResult;
         this.name = name;
+
+        analyse();
     }
 
+    private void analyse() {
+        executionResult.analyseImports();
+        imports.addAll(executionResult.getImports());
+        staticImports.addAll(executionResult.getStaticImports());
+    }
+
+    // region toCode
     public String toCode() {
         return toCode(new LineIndent());
     }
@@ -132,9 +143,7 @@ public class Test {
     private void addTest(StringBuilder stringBuilder) {
         for (String line : adapter.getTestString(0, executionResult.test, executionResult.exposeExceptionMapping(), visitor).split("\\r"
             + "?\\n")) {
-            stringBuilder.append(lineIndent);
-            stringBuilder.append(line);
-            stringBuilder.append(NEWLINE);
+            addLine(stringBuilder, lineIndent, line);
         }
     }
 
@@ -173,6 +182,8 @@ public class Test {
     private void addFooter(StringBuilder stringBuilder) {
         stringBuilder.append(lineIndent).append("}").append(NEWLINE);
     }
+
+    // endregion
 
     // region helper to prepare test
     private void chopTestToFirstException() {
@@ -219,5 +230,25 @@ public class Test {
     public void setName(String name) {
         this.name = name;
     }
+
+    public Collection<String> getImports() {
+        return imports;
+    }
+
+    public Collection<String> getStaticImports() {
+        return staticImports;
+    }
+
+    public ExecutionResult getExecutionResult() {
+        return executionResult;
+    }
+
+    public Collection<ClassField> getClassFields() {
+        if(executionResult.test.usesSpring())
+            return SpringSupport.getClassFields();
+        else
+            return Collections.emptyList();
+    }
+
     // end region
 }

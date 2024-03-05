@@ -1,11 +1,17 @@
 package org.evosuite.spring;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import org.evosuite.junit.ClassField;
+import org.evosuite.junit.EvoAnnotation;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -128,6 +134,21 @@ public class SpringClassTestContext {
         return isInterface && (isRepository || hasRepositoryAnnotation);
     }
 
+    public List<EvoAnnotation> getClassAnnotations() {
+        EvoAnnotation annotations = new EvoAnnotation("@RunWith(SpringRunner.class)");
+        annotations.add("@WebMvcTest(" + klass.getSimpleName() + ".class)");
+        return Collections.singletonList(annotations);
+    }
+
+    public List<ClassField> getClassFields() {
+        List<ClassField> fields = new ArrayList<>();
+        fields.add(new ClassField(MockMvc.class, Collections.singletonList(new EvoAnnotation("@Autowired"))));
+        fields.addAll(mockBeans.stream()
+            .map(mockBean -> new ClassField(mockBean,Collections.singletonList(new EvoAnnotation("@MockBean"))))
+            .collect(Collectors.toList()));
+        return fields;
+    }
+
     /**
      * Create the content of the test suite, including package, imports, annotations, class definition, fields and an empty test method
      *
@@ -213,7 +234,7 @@ public class SpringClassTestContext {
      */
     void addFields(StringBuilder sb) {
         sb.append("    @Autowired").append(NEWLINE);
-        sb.append("    private MockMvc mockMvc;").append(NEWLINE);
+        sb.append("    private MockMvc mockMvc0;").append(NEWLINE);
         sb.append(NEWLINE);
 
         for (Class<?> mockBean : mockBeans) {
@@ -260,4 +281,5 @@ public class SpringClassTestContext {
     public Set<Class<?>> getImports() {
         return imports;
     }
+
 }

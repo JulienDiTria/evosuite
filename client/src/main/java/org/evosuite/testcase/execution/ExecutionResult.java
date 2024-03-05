@@ -19,13 +19,33 @@
  */
 package org.evosuite.testcase.execution;
 
+import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import javax.swing.DebugGraphics;
+import org.evosuite.Properties;
 import org.evosuite.assertion.OutputTrace;
 import org.evosuite.coverage.io.input.InputCoverageGoal;
 import org.evosuite.coverage.io.output.OutputCoverageGoal;
 import org.evosuite.coverage.mutation.Mutation;
 import org.evosuite.ga.metaheuristics.mapelites.FeatureVector;
+import org.evosuite.junit.ImportHelper;
+import org.evosuite.junit.writer.Scaffolding;
+import org.evosuite.junit.writer.TestSuiteWriterUtils;
+import org.evosuite.runtime.EvoAssertions;
+import org.evosuite.runtime.EvoRunner;
+import org.evosuite.runtime.EvoRunnerJUnit5;
+import org.evosuite.runtime.EvoRunnerParameters;
+import org.evosuite.runtime.ViolatedAssumptionAnswer;
+import org.evosuite.runtime.testdata.EnvironmentDataList;
+import org.evosuite.spring.SpringSupport;
 import org.evosuite.testcase.TestCase;
+import org.evosuite.testcase.TestCodeVisitor;
+import org.evosuite.testcase.statements.FunctionalMockStatement;
 import org.evosuite.testcase.statements.Statement;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -488,4 +508,121 @@ public class ExecutionResult implements Cloneable {
     public List<FeatureVector> getFeatureVectors() {
         return Collections.unmodifiableList(this.featureVectors);
     }
+
+
+    // region imports
+    private Set<String> imports = new TreeSet<>();
+    private Set<String> staticImports = new TreeSet<>();
+
+    private static void addImport(Class<?> clazz, Set<String> imports) {
+        addImports(Collections.singleton(clazz), imports);
+    }
+
+    private static void addImports(Collection<Class<?>> classes, Set<String> imports) {
+        classes.stream().map(ExecutionResult::importToString).filter(Objects::nonNull).forEach(imports::add);
+    }
+
+    private static String importToString(Class<?> clazz) {
+        while (clazz.isArray())
+            clazz = clazz.getComponentType();
+        if (clazz.isPrimitive())
+            return null;
+        if (clazz.getName().startsWith("java.lang")) {
+            String name = clazz.getName().replace("java.lang.", "");
+            if (!name.contains("."))
+                return null;
+        }
+        if (!clazz.getName().contains("."))
+            return null;
+        // TODO: Check for anonymous type?
+        if (clazz.getName().contains("$"))
+            return clazz.getName().replace("$", ".");
+        else
+            return clazz.getName();
+    }
+
+    public void analyseImports() {
+        imports.clear();
+        staticImports.clear();
+
+        Set<Class<?>> accessedClasses = new HashSet<>();
+        boolean wasSecurityException = hasSecurityException;
+        boolean hasException = !noThrownExceptions();
+
+        TestCodeVisitor visitor = new TestCodeVisitor();
+        visitor.clearExceptions();
+        visitor.setExceptions(exceptions);
+        test.accept(visitor);
+        addImports(visitor.getImports(), imports);
+        accessedClasses.addAll(test.getAccessedClasses());
+        visitor.clearExceptions();
+
+        if (doesUseMocks()) {
+            String mockito = Mockito.class.getCanonicalName();
+            staticImports.add(mockito + ".*");
+            addImport(ViolatedAssumptionAnswer.class, imports);
+        }
+
+        if (test.usesSpring()){
+            addImports(SpringSupport.getImports(), imports);
+        }
+
+        if (hasException && !org.evosuite.Properties.NO_RUNTIME_DEPENDENCY) {
+            staticImports.add(EvoAssertions.class.getCanonicalName() + ".*");
+        }
+
+        if (org.evosuite.Properties.RESET_STANDARD_STREAMS) {
+            addImports(Arrays.asList(PrintStream.class, DebugGraphics.class), imports);
+        }
+
+        if (TestSuiteWriterUtils.needToUseAgent() && !org.evosuite.Properties.NO_RUNTIME_DEPENDENCY) {
+            addImport(EvoRunnerParameters.class, imports);
+            if (org.evosuite.Properties.TEST_FORMAT == org.evosuite.Properties.OutputFormat.JUNIT5) {
+                addImports(Arrays.asList(EvoRunnerJUnit5.class, RegisterExtension.class), imports);
+            } else {
+                addImports(Arrays.asList(RunWith.class, EvoRunner.class), imports);
+            }
+        }
+
+        for (Class<?> klass : EnvironmentDataList.getListOfClasses()) {
+            //TODO: not paramount, but best if could check if actually used in the test suite
+            if (accessedClasses.contains(klass))
+                imports.add(klass.getCanonicalName());
+        }
+
+        if (wasSecurityException) {
+            //Add import info for EvoSuite classes used in the generated test suite
+            imports.add(java.util.concurrent.ExecutorService.class.getCanonicalName());
+            imports.add(java.util.concurrent.Executors.class.getCanonicalName());
+            imports.add(java.util.concurrent.Future.class.getCanonicalName());
+            imports.add(java.util.concurrent.TimeUnit.class.getCanonicalName());
+        }
+
+        if (!org.evosuite.Properties.TEST_SCAFFOLDING && !Properties.NO_RUNTIME_DEPENDENCY) {
+            imports.addAll(Scaffolding.getScaffoldingImports(wasSecurityException, Collections.singletonList(this)));
+        }
+
+        // If a CodeUnderTestException happens, the test will be chopped before that exception
+        // but it would still be in the imports
+        imports.remove(CodeUnderTestException.class.getCanonicalName());
+    }
+
+    public Collection<String> getImports(){
+        return imports;
+    }
+
+    public Collection<String> getStaticImports() {
+        return staticImports;
+    }
+
+    public boolean doesUseMocks(){
+        for (Statement st : test) {
+            if (st instanceof FunctionalMockStatement) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }

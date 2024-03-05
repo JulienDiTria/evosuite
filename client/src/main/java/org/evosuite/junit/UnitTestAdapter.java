@@ -20,6 +20,7 @@
 
 package org.evosuite.junit;
 
+import java.util.Collection;
 import org.evosuite.junit.writer.JUnitAnnotationProvider;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.TestCodeVisitor;
@@ -38,9 +39,16 @@ public interface UnitTestAdapter extends JUnitAnnotationProvider {
     /**
      * Get all the framework dependent imports
      *
-     * @return a {@link java.lang.String} object.
+     * @return a collection of import string, with just the name to import.
      */
-    String getImports();
+    Collection<String> getImports();
+
+    /**
+     * Get all the framework dependent static imports
+     *
+     * @return a collection of import string, with just the name to import .
+     */
+    Collection<String> getStaticImports();
 
     /**
      * Get the framework specific definition of the test class

@@ -112,7 +112,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         } catch (Throwable ex) {
             return new Fail(ex);
         }
-        mockMvc = getFieldValue(testInstance, "mockMvc");
+        mockMvc = getFieldValue(testInstance, "mockMvc0");
         handlerMethods = getHandlerMethodsFromMockMvc(mockMvc);
         this.frameworkMethod = frameworkMethod;
 

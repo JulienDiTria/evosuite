@@ -20,6 +20,9 @@
 
 package org.evosuite.junit;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import org.evosuite.Properties;
 import org.evosuite.junit.writer.TestSuiteWriterUtils;
 import org.evosuite.runtime.vnet.NonFunctionalRequirementExtension;
@@ -87,17 +90,28 @@ public class JUnit5TestAdapter implements UnitTestAdapter {
      * {@inheritDoc}
      */
     @Override
-    public String getImports() {
-        String imports = "";
+    public Collection<String> getImports() {
+        ArrayList<String> imports = new ArrayList<>();
         if ((Properties.ECLIPSE_PLUGIN) && (!Properties.TARGET_CLASS.equals("EvoSuiteTest")))
-            imports += "import " + org.evosuite.annotations.EvoSuiteTest.class.getName() + ";\n";
+            imports.add(org.evosuite.annotations.EvoSuiteTest.class.getName());
         if (!Properties.TARGET_CLASS.equals("Test"))
-            imports += "import org.junit.jupiter.api.Test;\n";
-        imports += "import static org.junit.jupiter.api.Assertions.*;\n";
-        imports += "import org.junit.jupiter.api.Timeout;\n";
-        imports += "import java.util.concurrent.TimeUnit;\n";
+            imports.add("org.junit.jupiter.api.Test");
+        imports.add("import org.junit.jupiter.api.Timeout");
+        imports.add("import java.util.concurrent.TimeUnit");
 
         return imports;
+    }
+
+    /* (non-Javadoc)
+     * @see org.evosuite.junit.UnitTestAdapter#getImports()
+     */
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<String> getStaticImports() {
+        return Collections.singletonList("org.junit.jupiter.api.Assertions.*");
     }
 
     /* (non-Javadoc)

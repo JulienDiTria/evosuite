@@ -9,11 +9,11 @@ import static org.evosuite.junit.writer.TestSuiteWriterUtils.addLine;
 public class ClassField {
 
     private final Class<?> type;
-    private final List<FieldAnnotation> annotations;
+    private final List<EvoAnnotation> annotations;
 
     private LineIndent lineIndent = new LineIndent();
 
-    public ClassField(Class<?> type, List<FieldAnnotation> annotations) {
+    public ClassField(Class<?> type, List<EvoAnnotation> annotations) {
         this.type = type;
         this.annotations = annotations;
     }
@@ -30,7 +30,7 @@ public class ClassField {
 
     private void addAnnotations(StringBuilder stringBuilder){
         if(!annotations.isEmpty()){
-            for (FieldAnnotation annotation:annotations){
+            for (EvoAnnotation annotation:annotations){
                 addLine(stringBuilder, lineIndent, annotation.toCode(lineIndent));
             }
         }
