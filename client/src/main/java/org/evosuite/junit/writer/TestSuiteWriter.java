@@ -255,17 +255,8 @@ public class TestSuiteWriter implements Opcodes {
         // let's try to remove any remaining assertions. TODO: Better solution
         removeAssertionsAfterException(results);
 
-        if(testCases.isEmpty()){
-            if(usesSpring){
-                logger.warn("No spring test cases generated, not creating empty test for {}", name);
-            } else {
-                logger.warn("No test cases generated, not creating empty test for {}", name);
-            }
-        }
-        else {
-            logger.info("Writing test cases to file");
-            content = writeTestSuiteAndScaffolding(dir, name, results, generated );
-        }
+        // write the test suite
+        content = writeTestSuiteAndScaffolding(dir, name, results, generated);
 
         writeCoveredGoalsFile();
 
@@ -280,7 +271,7 @@ public class TestSuiteWriter implements Opcodes {
 
 
         StringBuilder content = new StringBuilder();
-        if (Properties.OUTPUT_GRANULARITY == OutputGranularity.MERGED) {
+        if (Properties.OUTPUT_GRANULARITY == OutputGranularity.MERGED || testCases.isEmpty()) {
             File file = new File(dir + "/" + name + ".java");
             //executor.newObservers();
             String testCode = getUnitTestsAllInSameFile(name, results);

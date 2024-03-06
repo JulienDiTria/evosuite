@@ -1,6 +1,7 @@
 package org.evosuite.spring;
 
 import com.examples.with.different.packagename.spring.petclinic.owner.OwnerController;
+import org.evosuite.Properties;
 import org.evosuite.TestSuiteGenerator;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.junit.JUnitAnalyzer;
@@ -19,6 +20,7 @@ public class TestSpringSupport {
 
     @Test
     public void test1() throws ConstructionFailedException {
+        Properties.TARGET_CLASS = OwnerController.class.getName();
         TestCase testCase = new DefaultTestCase();
         SpringSupport.setup(OwnerController.class.getName());
         SpringTestFactory.insertRandomSpringCall(testCase, 0);
@@ -27,6 +29,7 @@ public class TestSpringSupport {
         testSuite.addTest(testCase);
         JUnitAnalyzer.removeTestsThatDoNotCompile(testSuite.getTests());
 
-//        TestSuiteGenerator.writeJUnitTestsAndCreateResult(testSuite);
+        TestSuiteGenerator.writeJUnitTestsAndCreateResult(testSuite);
+
     }
 }

@@ -19,6 +19,7 @@ public class DeclarationStatement extends AbstractStatement {
     private static final long serialVersionUID = 2051431241124468349L;
 
     private transient Object value = null;
+    private transient boolean isInjection = false;
 
     public DeclarationStatement(TestCase tc, VariableReference retval) throws IllegalArgumentException {
         super(tc, retval);
@@ -34,6 +35,7 @@ public class DeclarationStatement extends AbstractStatement {
             throw new ClassCastException(message);
         }
         this.value = value;
+        isInjection = true;
     }
 
     @Override
@@ -103,5 +105,9 @@ public class DeclarationStatement extends AbstractStatement {
 
         DeclarationStatement other = (DeclarationStatement) s;
         return retval.same(other.retval);
+    }
+
+    public boolean isInjection() {
+        return isInjection;
     }
 }

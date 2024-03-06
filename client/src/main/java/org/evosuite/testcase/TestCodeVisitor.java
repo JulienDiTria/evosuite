@@ -1073,6 +1073,8 @@ public class TestCodeVisitor extends TestVisitor {
             Type actualParamType = parameters.get(i).getType();
             String name = getVariableName(parameters.get(i));
             Class<?> rawParamClass = declaredParamType instanceof WildcardType ? Object.class : GenericTypeReflector.erase(declaredParamType);
+            Class<?> rawActualParamClass = actualParamType instanceof WildcardType ? Object.class :
+                GenericTypeReflector.erase(actualParamType);
             if (rawParamClass.isPrimitive() && name.equals("null")) {
                 parameterString += getPrimitiveNullCast(rawParamClass);
             } else if (isGenericMethod && !(declaredParamType instanceof WildcardType)) {
@@ -1082,7 +1084,6 @@ public class TestCodeVisitor extends TestVisitor {
                         name = name.replace("(short)", "");
                     if (name.contains("(byte"))
                         name = name.replace("(byte)", "");
-
                 }
             } else if (name.equals("null")) {
                 parameterString += "(" + getTypeName(declaredParamType) + ") ";
@@ -1130,6 +1131,8 @@ public class TestCodeVisitor extends TestVisitor {
                 }
             }
 
+            getClassName(rawParamClass);
+            getClassName(rawActualParamClass);
             parameterString += name;
         }
 
@@ -1803,7 +1806,8 @@ public class TestCodeVisitor extends TestVisitor {
     @Override
     public void visitDeclarationStatement(DeclarationStatement statement) {
         VariableReference retval = statement.getReturnValue();
-
+        if (statement.isInjection())
+            testCode += "// injection : ";
         testCode += getClassName(retval) + " " + getVariableName(retval) + ";" + NEWLINE;
     }
 
