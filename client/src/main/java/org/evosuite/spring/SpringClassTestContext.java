@@ -135,9 +135,10 @@ public class SpringClassTestContext {
     }
 
     public List<EvoAnnotation> getClassAnnotations() {
-        EvoAnnotation annotations = new EvoAnnotation("@RunWith(SpringRunner.class)");
-        annotations.add("@WebMvcTest(" + klass.getSimpleName() + ".class)");
-        return Collections.singletonList(annotations);
+        EvoAnnotation annotation = new EvoAnnotation("@RunWith(SpringRunner.class)");
+        annotation.add("@WebMvcTest(" + klass.getSimpleName() + ".class)");
+
+        return new ArrayList<>(Collections.singletonList(annotation));
     }
 
     public List<ClassField> getClassFields() {

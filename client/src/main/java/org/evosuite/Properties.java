@@ -304,7 +304,7 @@ public class Properties {
 
     @Parameter(key = "p_use_spring", group = "Test Creation", description = "Probability [0,1] of using spring framework when creating object instances")
     @DoubleValue(min = 0.0, max = 1.0)
-    public static double P_USE_SPRING = 1; // default 0.5
+    public static double P_USE_SPRING = 0.8; // default 0.5
 
     @Parameter(key = "num_parallel_clients", group = "Test Creation", description = "Number of EvoSuite clients to run in parallel")
     public static int NUM_PARALLEL_CLIENTS = 1;

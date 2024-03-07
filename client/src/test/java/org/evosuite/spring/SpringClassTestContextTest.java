@@ -37,7 +37,7 @@ public class SpringClassTestContextTest {
         assertContains("@WebMvcTest(" + klass.getSimpleName() + ".class)", testSuiteContent);
         assertContains("@MockBean", testSuiteContent, 1);
         assertContains("@Autowired", testSuiteContent);
-        assertContains("private MockMvc mockMvc;", testSuiteContent);
+        assertContains("private MockMvc mockMvc0;", testSuiteContent);
         System.out.println(testSuiteContent);
     }
 
@@ -54,7 +54,7 @@ public class SpringClassTestContextTest {
         assertContains("@WebMvcTest(" + klass.getSimpleName() + ".class)", testSuiteContent);
         assertContains("@MockBean", testSuiteContent, 2);
         assertContains("@Autowired", testSuiteContent);
-        assertContains("private MockMvc mockMvc;", testSuiteContent);
+        assertContains("private MockMvc mockMvc0;", testSuiteContent);
         System.out.println(testSuiteContent);
     }
 
@@ -71,7 +71,7 @@ public class SpringClassTestContextTest {
         assertContains("@WebMvcTest(" + klass.getSimpleName() + ".class)", testSuiteContent);
         assertContains("@MockBean", testSuiteContent, 0);
         assertContains("@Autowired", testSuiteContent);
-        assertContains("private MockMvc mockMvc;", testSuiteContent);
+        assertContains("private MockMvc mockMvc0;", testSuiteContent);
         System.out.println(testSuiteContent);
     }
 }

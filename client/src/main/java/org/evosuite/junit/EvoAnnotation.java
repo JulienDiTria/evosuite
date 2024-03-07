@@ -1,5 +1,6 @@
 package org.evosuite.junit;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.evosuite.junit.writer.LineIndent;
@@ -8,15 +9,15 @@ import static org.evosuite.junit.writer.TestSuiteWriterUtils.addLine;
 
 public class EvoAnnotation implements Comparable<EvoAnnotation> {
 
-    private final List<String> lines;
+    private final List<String> lines = new ArrayList<>();
     private LineIndent lineIndent;
 
     public EvoAnnotation(String oneLineAnnotation){
-        this.lines = Collections.singletonList(oneLineAnnotation);
+        lines.add(oneLineAnnotation);
     }
 
     public EvoAnnotation(List<String> lines){
-        this.lines = lines;
+        this.lines.addAll(lines);
     }
 
     public void add(String line){

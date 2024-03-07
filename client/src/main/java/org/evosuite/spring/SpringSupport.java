@@ -12,12 +12,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.evosuite.junit.ClassField;
 import org.evosuite.junit.EvoAnnotation;
+import org.evosuite.utils.JavaCompilerUtils;
 import org.evosuite.utils.Randomness;
+import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
@@ -61,11 +65,17 @@ public class SpringSupport {
     public static void setup(String className) {
         if (isHandlerType(className)) {
             try {
-                // create empty test for spring controller
-                Class<?> emptyTestClass = createEmptyTest(className);
+                logger.warn("#setup creating simple test suite for '{}'", className);
+
+                // create simple test for spring controller
+                Class<?> simpleTestSuite = createSimpleTestSuite(className);
+                
+                logger.warn("#setup class loaded '{}'", simpleTestSuite.getName());
 
                 // execute the test with spring runner
-                setupSpringRunner(emptyTestClass);
+                setupSpringRunner(simpleTestSuite);
+                logger.warn("#setup spring runner loaded");
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -85,7 +95,7 @@ public class SpringSupport {
      * @return a test suite loaded into the classpath
      * @throws IOException if an I/O error occurs,
      */
-    private static Class<?> createEmptyTest(Object controller) throws IOException {
+    private static Class<?> createSimpleTestSuite(Object controller) throws IOException {
         Class<?> clazz = getClassForObject(controller);
         ClassLoader classLoader = logger.getClass().getClassLoader();
 
@@ -114,16 +124,12 @@ public class SpringSupport {
         Files.write(testFile.toPath(), testSuiteContent.getBytes());
 
         // compile the class
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        OutputStream out = new ByteArrayOutputStream();
-        OutputStream err = new ByteArrayOutputStream();
-        int result = compiler.run(null, out, err, testFile.getPath());
-        if (result != 0) {
-            logger.warn("Compilation failed with exit code '{}' while trying to compile the file '{}' containing the following code:\n{}",
-                result, testFile.getPath(), testSuiteContent);
-            logger.warn("Output: {}", out);
-            logger.warn("Error: {}", err);
-            throw new RuntimeException("Compilation failed with exit code " + result);
+        JavaCompilerUtils compiler = new JavaCompilerUtils();
+        boolean compilationOk = compiler.compile(Collections.singletonList(testFile));
+        if (!compilationOk) {
+            logger.warn("createSimpleTestSuite - Compilation failed while trying to compile the file '{}' containing the following code:\n{}",
+                testFile.getPath(), testSuiteContent);
+            throw new RuntimeException("Compilation failed for file " + testFile.getPath());
         }
 
         // move file into classpath
@@ -134,14 +140,30 @@ public class SpringSupport {
         folder.deleteOnExit();
         File compiledFileInClasspath = new File(folder, testSuiteName + ".class");
         compiledFileInClasspath.deleteOnExit();
+        logger.warn("createSimpleTestSuite - Moving file '{}' to '{}'", compiledFile.getPath(), compiledFileInClasspath.getPath());
         Files.move(compiledFile.toPath(), compiledFileInClasspath.toPath(), REPLACE_EXISTING);
 
         // load class
         try {
             return classLoader.loadClass(className);
         } catch (ClassNotFoundException e) {
+            logger.warn("createSimpleTestSuite - Could not load className '{}' created from file '{}'", className, compiledFileInClasspath.getPath());
             throw new RuntimeException(e);
         }
+    }
+
+    private static int compile(File toCompile) {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        OutputStream out = new ByteArrayOutputStream();
+        OutputStream err = new ByteArrayOutputStream();
+        int result = compiler.run(null, out, err, toCompile.getPath());
+        if (result != 0) {
+            logger.warn("Compilation failed with exit code '{}' while trying to compile the file '{}'",
+                result, toCompile.getPath());
+            logger.warn("Output: {}", out);
+            logger.warn("Error: {}", err);
+        }
+        return result;
     }
 
     /**
@@ -151,20 +173,41 @@ public class SpringSupport {
      */
     private static void setupSpringRunner(Object controller) {
         Class<?> clazz = getClassForObject(controller);
-        RunNotifier runNotifier = new RunNotifier();
 
         try {
             instance.springSetupRunner = new SpringSetupRunner(clazz);
         } catch (InitializationError e) {
+            logger.error("#setupSpringRunner could not initialize SpringSetupRunner for class '{}'", clazz.getName());
             throw new RuntimeException(e);
         }
 
-        instance.springSetupRunner.run(runNotifier);
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            RunNotifier runNotifier = new RunNotifier();
+            SpringRunListener listener = new SpringRunListener(latch);
+            runNotifier.addListener(listener);
+            instance.springSetupRunner.run(runNotifier);
+            boolean noTimeout = latch.await(10, TimeUnit.SECONDS);
+            if (!noTimeout) {
+                logger.warn("#setupSpringRunner timeout");
+                throw new RuntimeException("Timeout while setting up Spring context for class " + clazz.getName());
+            }
+            else {
+                logger.warn("#setupSpringRunner done");
+            }
+        } catch (InterruptedException e) {
+            logger.error("#setupSpringRunner interrupted", e);
+            throw new RuntimeException(e);
+        }
+
         instance.mockMvc = instance.springSetupRunner.mockMvc;
         instance.handlerMethods = instance.springSetupRunner.handlerMethods;
-        assert (instance.mockMvc != null);
-        System.out.println("MockMvc: " + instance.mockMvc);
-        System.out.println("SpringSetupRunner executed");
+        if (instance.mockMvc == null) {
+            logger.error("#setupSpringRunner MockMvc is null for class '{}'", clazz.getName());
+            throw new RuntimeException("MockMvc is null for class " + clazz.getName());
+        }
+        logger.warn("#setupSpringRunner MockMvc: {}", instance.mockMvc);
+        logger.warn("#setupSpringRunner done");
     }
     
     public static MockMvc getMockMvc() {

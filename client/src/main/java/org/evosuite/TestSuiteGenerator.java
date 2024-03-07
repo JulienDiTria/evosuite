@@ -687,9 +687,11 @@ public class TestSuiteGenerator {
 
             // Write Spring related tests
             List<TestCase> springTests = tests.stream().filter(t -> t.usesSpring()).collect(Collectors.toList());
-            TestSuiteWriter springSuiteWriter = new TestSuiteWriter(true);
-            suiteWriter.insertTests(springTests);
-            springSuiteWriter.writeTestSuite(name + "_Spring" + suffix, testDir, testSuite.getLastExecutionResults());
+            if (!springTests.isEmpty()) {
+                TestSuiteWriter springSuiteWriter = new TestSuiteWriter(true);
+                suiteWriter.insertTests(springTests);
+                springSuiteWriter.writeTestSuite(name + "_Spring" + suffix, testDir, testSuite.getLastExecutionResults());
+            }
         }
         return TestGenerationResultBuilder.buildSuccessResult();
     }

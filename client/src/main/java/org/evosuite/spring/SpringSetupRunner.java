@@ -1,5 +1,6 @@
 package org.evosuite.spring;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
@@ -7,10 +8,13 @@ import java.util.Optional;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.method.HandlerMethod;
@@ -20,6 +24,8 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 public class SpringSetupRunner extends SpringJUnit4ClassRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     public Statement statement;
     public FrameworkMethod frameworkMethod;
@@ -72,6 +78,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             fieldValue = field.get(holder);
             return (T) fieldValue;
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+            logger.error("#getFieldValue Error getting field value: " + fieldName, e);
             throw new RuntimeException(e);
         }
     }
@@ -82,8 +89,10 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
      */
     @Override
     protected void runChild(FrameworkMethod frameworkMethod, RunNotifier notifier) {
+        logger.info("#runChild Running child: {}", frameworkMethod.getName());
         Description description = describeChild(frameworkMethod);
         if (isTestMethodIgnored(frameworkMethod)) {
+            logger.info("#runChild TestMethodIgnored: {}", frameworkMethod.getName());
             notifier.fireTestIgnored(description);
         } else {
             try {
@@ -93,6 +102,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             }
             // THIS IS THE EXECUTION OF THE STATEMENT WHICH WE DON'T WANT
 //            runLeaf(statement, description, notifier);
+            notifier.fireTestFinished(description);
         }
     }
 
@@ -102,6 +112,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
      */
     @Override
     protected Statement methodBlock(FrameworkMethod frameworkMethod) {
+        logger.warn("#methodBlock frameworkMethod: {}", frameworkMethod.getName());
         try {
             testInstance = new ReflectiveCallable() {
                 @Override
@@ -110,11 +121,16 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
                 }
             }.run();
         } catch (Throwable ex) {
+            logger.error("#methodBlock error when trying to create the test: " + frameworkMethod.getName(), ex);
             return new Fail(ex);
         }
+        logger.warn("#methodBlock test created for: {}", frameworkMethod.getName());
+
+
         mockMvc = getFieldValue(testInstance, "mockMvc0");
         handlerMethods = getHandlerMethodsFromMockMvc(mockMvc);
         this.frameworkMethod = frameworkMethod;
+        logger.warn("#methodBlock done: {}", frameworkMethod.getName());
 
         return super.methodBlock(frameworkMethod);
     }

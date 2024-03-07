@@ -32,6 +32,7 @@ import org.evosuite.runtime.classhandling.JDKClassResetter;
 import org.evosuite.runtime.sandbox.Sandbox;
 import org.evosuite.runtime.util.JarPathing;
 import org.evosuite.testcase.TestCase;
+import org.evosuite.utils.JavaCompilerUtils;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.*;
@@ -312,7 +313,7 @@ public abstract class JUnitAnalyzer {
 
         List<File> generated = new ArrayList<>();
         List<File> standardGenerated = compileTests(standardTests, dir, false);
-        List<File> springGenerated = compileTests(springTests, dir, true);
+        List<File> springGenerated = springTests.isEmpty() ? null : compileTests(springTests, dir, true);
 
         if (standardGenerated != null) {
             generated.addAll(standardGenerated);
@@ -340,87 +341,23 @@ public abstract class JUnitAnalyzer {
         String name = Properties.TARGET_CLASS.substring(beginIndex);
         name += "_" + (NUM++) + "_tmp_" + Properties.JUNIT_SUFFIX; //postfix
 
-        try {
-            //now generate the JUnit test case
-            List<File> generated = suite.writeTestSuite(name, dir.getAbsolutePath(), Collections.EMPTY_LIST);
-            for (File file : generated) {
-                if (!file.exists()) {
-                    logger.error("Supposed to generate " + file
-                            + " but it does not exist");
-                    return null;
-                }
-            }
-
-            //try to compile the test cases
-            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-            if (compiler == null) {
-                logger.error("No Java compiler is available");
+        //now generate the JUnit test case
+        List<File> generated = suite.writeTestSuite(name, dir.getAbsolutePath(), Collections.emptyList());
+        for (File file : generated) {
+            if (!file.exists()) {
+                logger.error("Supposed to generate {} but it does not exist", file);
                 return null;
             }
+        }
 
-            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            Locale locale = Locale.getDefault();
-            Charset charset = StandardCharsets.UTF_8;
-            StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics,
-                    locale,
-                    charset);
-
-            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(generated);
-
-            String evosuiteCP = ClassPathHandler.getInstance().getEvoSuiteClassPath();
-            if (JarPathing.containsAPathingJar(evosuiteCP)) {
-                evosuiteCP = JarPathing.expandPathingJars(evosuiteCP);
-            }
-
-            String targetProjectCP = ClassPathHandler.getInstance().getTargetProjectClasspath();
-            if (JarPathing.containsAPathingJar(targetProjectCP)) {
-                targetProjectCP = JarPathing.expandPathingJars(targetProjectCP);
-            }
-
-            String classpath = targetProjectCP + File.pathSeparator + evosuiteCP;
-
-            List<String> optionList = new ArrayList<>(Arrays.asList("-classpath", classpath));
-
-            CompilationTask task = compiler.getTask(null, fileManager, diagnostics,
-                    optionList, null, compilationUnits);
-            boolean compiled = task.call();
-            fileManager.close();
-
-            if (!compiled) {
-                logger.error("Compilation failed on compilation units: " + compilationUnits);
-                logger.error("Classpath: " + classpath);
-                //TODO remove
-                logger.error("evosuiteCP: " + evosuiteCP);
-
-
-                for (Diagnostic<?> diagnostic : diagnostics.getDiagnostics()) {
-                    if (diagnostic.getMessage(null).startsWith("error while writing")) {
-                        logger.error("Error is due to file permissions, ignoring...");
-                        return generated;
-                    }
-                    logger.error("Diagnostic: " + diagnostic.getMessage(null) + ": "
-                            + diagnostic.getLineNumber());
-                }
-
-                StringBuffer buffer = new StringBuffer();
-                for (JavaFileObject sourceFile : compilationUnits) {
-                    List<String> lines = FileUtils.readLines(new File(sourceFile.toUri().getPath()));
-
-                    buffer.append(compilationUnits.iterator().next().toString() + "\n");
-
-                    for (int i = 0; i < lines.size(); i++) {
-                        buffer.append((i + 1) + ": " + lines.get(i) + "\n");
-                    }
-                }
-                logger.error(buffer.toString());
-                return null;
-            }
-
-            return generated;
-
-        } catch (IOException e) {
-            logger.error("" + e, e);
+        JavaCompilerUtils compiler = new JavaCompilerUtils();
+        boolean compilationOk = compiler.compile(generated);
+        if(!compilationOk) {
+            logger.error("Compilation failed for test cases: {}", generated.stream().map(File::getPath).collect(Collectors.joining(", ")));
             return null;
+        }
+        else {
+            return generated;
         }
     }
 
