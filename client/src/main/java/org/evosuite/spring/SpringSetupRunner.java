@@ -4,11 +4,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
-import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -78,21 +80,21 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             fieldValue = field.get(holder);
             return (T) fieldValue;
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
-            logger.error("#getFieldValue Error getting field value: " + fieldName, e);
+            logger.error("getFieldValue Error getting field value: " + fieldName, e);
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Perform the same logic as {@link SpringJUnit4ClassRunner#runChild(FrameworkMethod, RunNotifier)}, except the statement is not
+     * Perform the same logic as {@link SpringJUnit4ClassRunnerrunChild - (FrameworkMethod, RunNotifier)}, except the statement is not
      * executed and only saved for later use.
      */
     @Override
     protected void runChild(FrameworkMethod frameworkMethod, RunNotifier notifier) {
-        logger.info("#runChild Running child: {}", frameworkMethod.getName());
+        logger.info("runChild -  Running child: {}", frameworkMethod.getName());
         Description description = describeChild(frameworkMethod);
         if (isTestMethodIgnored(frameworkMethod)) {
-            logger.info("#runChild TestMethodIgnored: {}", frameworkMethod.getName());
+            logger.info("runChild -  TestMethodIgnored: {}", frameworkMethod.getName());
             notifier.fireTestIgnored(description);
         } else {
             try {
@@ -108,11 +110,11 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
 
     /**
      * Intercept the methodBlock to save the framework method and test instance then call the super methodBlock
-     * {@link SpringJUnit4ClassRunner#methodBlock(FrameworkMethod)} .
+     * {@link SpringJUnit4ClassRunnermethodBlock - (FrameworkMethod)} .
      */
     @Override
     protected Statement methodBlock(FrameworkMethod frameworkMethod) {
-        logger.warn("#methodBlock frameworkMethod: {}", frameworkMethod.getName());
+        logger.info("methodBlock - frameworkMethod: {}", frameworkMethod.getName());
         try {
             testInstance = new ReflectiveCallable() {
                 @Override
@@ -121,17 +123,42 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
                 }
             }.run();
         } catch (Throwable ex) {
-            logger.error("#methodBlock error when trying to create the test: " + frameworkMethod.getName(), ex);
+            logger.error("methodBlock - error when trying to create the test: " + frameworkMethod.getName(), ex);
             return new Fail(ex);
         }
-        logger.warn("#methodBlock test created for: {}", frameworkMethod.getName());
-
+        logger.info("methodBlock - test created for: {}", frameworkMethod.getName());
+        logger.info("methodBlock - testInstance: {}", testInstance);
 
         mockMvc = getFieldValue(testInstance, "mockMvc0");
+        logger.info("methodBlock - mockMvc object: {}", mockMvc);
+
         handlerMethods = getHandlerMethodsFromMockMvc(mockMvc);
+        logger.info("methodBlock - handlerMethods: {}", handlerMethods);
+
         this.frameworkMethod = frameworkMethod;
-        logger.warn("#methodBlock done: {}", frameworkMethod.getName());
+        logger.info("methodBlock - done: {}", frameworkMethod.getName());
 
         return super.methodBlock(frameworkMethod);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("SpringSetupRunner{\n");
+
+        stringBuilder.append("\tstatement=").append(statement).append("\n");
+        stringBuilder.append("\tframeworkMethod=").append(frameworkMethod).append("\n");
+        stringBuilder.append("\ttestInstance=").append(testInstance).append("\n");
+        stringBuilder.append("\tmockMvc=").append(mockMvc).append("\n");
+        stringBuilder.append("\thandlerMethods=").append(handlerMethods).append("\n");
+
+        stringBuilder.append("\ttestContextManager.testContext=").append(this.getTestContextManager().getTestContext()).append("\n");
+        stringBuilder.append("\ttestContextManager.testExecutionsListeners.size=").append(this.getTestContextManager().getTestExecutionListeners().size()).append("\n");
+        stringBuilder.append("\ttestContextManager.testExecutionsListeners=").append(this.getTestContextManager().getTestExecutionListeners().stream().map(
+            Objects::toString).collect(Collectors.toList())).append("\n");
+
+        stringBuilder.append("}");
+        return stringBuilder.toString();
     }
 }

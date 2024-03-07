@@ -65,16 +65,16 @@ public class SpringSupport {
     public static void setup(String className) {
         if (isHandlerType(className)) {
             try {
-                logger.warn("#setup creating simple test suite for '{}'", className);
+                logger.warn("setup - creating simple test suite for '{}'", className);
 
                 // create simple test for spring controller
                 Class<?> simpleTestSuite = createSimpleTestSuite(className);
                 
-                logger.warn("#setup class loaded '{}'", simpleTestSuite.getName());
+                logger.warn("setup - class loaded '{}'", simpleTestSuite.getName());
 
                 // execute the test with spring runner
                 setupSpringRunner(simpleTestSuite);
-                logger.warn("#setup spring runner loaded");
+                logger.warn("setup - spring runner loaded");
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -177,9 +177,11 @@ public class SpringSupport {
         try {
             instance.springSetupRunner = new SpringSetupRunner(clazz);
         } catch (InitializationError e) {
-            logger.error("#setupSpringRunner could not initialize SpringSetupRunner for class '{}'", clazz.getName());
+            logger.error("setupSpringRunner - could not initialize SpringSetupRunner for class '{}'", clazz.getName());
             throw new RuntimeException(e);
         }
+
+        logger.warn("setupSpringRunner - object springSetupRunner {}", instance.springSetupRunner);
 
         try {
             CountDownLatch latch = new CountDownLatch(1);
@@ -189,25 +191,25 @@ public class SpringSupport {
             instance.springSetupRunner.run(runNotifier);
             boolean noTimeout = latch.await(10, TimeUnit.SECONDS);
             if (!noTimeout) {
-                logger.warn("#setupSpringRunner timeout");
+                logger.warn("setupSpringRunner - timeout");
                 throw new RuntimeException("Timeout while setting up Spring context for class " + clazz.getName());
             }
             else {
-                logger.warn("#setupSpringRunner done");
+                logger.info("setupSpringRunner - done");
             }
         } catch (InterruptedException e) {
-            logger.error("#setupSpringRunner interrupted", e);
+            logger.error("setupSpringRunner - interrupted", e);
             throw new RuntimeException(e);
         }
 
         instance.mockMvc = instance.springSetupRunner.mockMvc;
         instance.handlerMethods = instance.springSetupRunner.handlerMethods;
         if (instance.mockMvc == null) {
-            logger.error("#setupSpringRunner MockMvc is null for class '{}'", clazz.getName());
+            logger.error("setupSpringRunner - MockMvc is null for class '{}'", clazz.getName());
             throw new RuntimeException("MockMvc is null for class " + clazz.getName());
         }
-        logger.warn("#setupSpringRunner MockMvc: {}", instance.mockMvc);
-        logger.warn("#setupSpringRunner done");
+        logger.warn("setupSpringRunner - MockMvc: {}", instance.mockMvc);
+        logger.warn("setupSpringRunner - done");
     }
     
     public static MockMvc getMockMvc() {
