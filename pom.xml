@@ -752,10 +752,10 @@
                                         <pattern>org.objectweb.asm</pattern>
                                         <shadedPattern>org.evosuite.shaded.org.objectweb.asm</shadedPattern>
                                     </relocation>
-                                    <relocation>
-                                        <pattern>org.apache.commons.logging</pattern>
-                                        <shadedPattern>org.evosuite.shaded.org.apache.commons.logging</shadedPattern>
-                                    </relocation>
+<!--                                    <relocation>-->
+<!--                                        <pattern>org.apache.commons.logging</pattern>-->
+<!--                                        <shadedPattern>org.evosuite.shaded.org.apache.commons.logging</shadedPattern>-->
+<!--                                    </relocation>-->
                                     <relocation>
                                         <pattern>javassist</pattern>
                                         <shadedPattern>org.evosuite.shaded.javassist</shadedPattern>
@@ -801,12 +801,13 @@
                                     </relocation>
                                     <relocation>
                                         <pattern>org.apache</pattern>
-                                        <shadedPattern>org.evosuite.shaded.org.apache</shadedPattern>
+                                        <shadedPattern>org.evosuite.shadeddddd.org.apache</shadedPattern>
                                         <excludes>
                                             <!-- Important, otherwise AntInitializingListener would not work in Ant -->
                                             <exclude>org.apache.tools.ant.taskdefs.optional.junit.JUnitResultFormatter</exclude>
                                             <exclude>org.apache.tools.ant.taskdefs.optional.junit.JUnitTest</exclude>
                                             <exclude>org.apache.tools.ant.BuildException</exclude>
+                                            <exclude>org.apache.commons.logging.*</exclude>
                                         </excludes>
                                     </relocation>
                                     <relocation>

@@ -81,8 +81,22 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <dependency>
+
+<!--    <dependency>-->
+<!--      <groupId>commons-logging</groupId>-->
+<!--      <artifactId>commons-logging</artifactId>-->
+<!--      <version>1.2</version>-->
+<!--    </dependency>-->
+
+
+    <dependency>
             <groupId>dk.brics.automaton</groupId>
             <artifactId>automaton</artifactId>
         </dependency>
@@ -158,12 +172,12 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-actuator</artifactId>
           <version>${springboot.version}</version>
-          <exclusions>
-              <exclusion>
-                  <groupId>org.springframework</groupId>
-                  <artifactId>spring-jcl</artifactId>
-              </exclusion>
-          </exclusions>
+<!--          <exclusions>-->
+<!--              <exclusion>-->
+<!--                  <groupId>org.springframework</groupId>-->
+<!--                  <artifactId>spring-jcl</artifactId>-->
+<!--              </exclusion>-->
+<!--          </exclusions>-->
       </dependency>
       <dependency>
           <groupId>org.springframework.boot</groupId>
@@ -189,12 +203,12 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-test</artifactId>
           <version>${springboot.version}</version>
-          <exclusions>
-              <exclusion>
-                  <groupId>org.springframework</groupId>
-                  <artifactId>spring-jcl</artifactId>
-              </exclusion>
-          </exclusions>
+<!--          <exclusions>-->
+<!--              <exclusion>-->
+<!--                  <groupId>org.springframework</groupId>-->
+<!--                  <artifactId>spring-jcl</artifactId>-->
+<!--              </exclusion>-->
+<!--          </exclusions>-->
       </dependency>
 <!--    <dependency>-->
 <!--        <groupId>org.springframework</groupId>-->

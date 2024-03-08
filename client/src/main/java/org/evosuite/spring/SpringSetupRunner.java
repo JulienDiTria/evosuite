@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.evosuite.spring.testExecutionListeners.ProxyTestExecutionListener;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
@@ -17,6 +18,8 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.context.TestContextManager;
+import org.springframework.test.context.TestExecutionListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.method.HandlerMethod;
@@ -91,20 +94,26 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
      */
     @Override
     protected void runChild(FrameworkMethod frameworkMethod, RunNotifier notifier) {
-        logger.info("runChild -  Running child: {}", frameworkMethod.getName());
+        logger.info("runChild - Running child: {}", frameworkMethod.getName());
         Description description = describeChild(frameworkMethod);
         if (isTestMethodIgnored(frameworkMethod)) {
-            logger.info("runChild -  TestMethodIgnored: {}", frameworkMethod.getName());
+            logger.info("runChild - TestMethodIgnored: {}", frameworkMethod.getName());
             notifier.fireTestIgnored(description);
         } else {
             try {
                 statement = methodBlock(frameworkMethod);
+                if (statement instanceof Fail) {
+                    logger.error("runChild - statement creation failed with error: {}", statement);
+                }
+                logger.info("runChild - statement received ok : {}", statement);
             } catch (Throwable ex) {
                 statement = new Fail(ex);
+                logger.error("runChild - statement creation failed with error: {}", ex.toString());
             }
             // THIS IS THE EXECUTION OF THE STATEMENT WHICH WE DON'T WANT
 //            runLeaf(statement, description, notifier);
             notifier.fireTestFinished(description);
+            logger.info("runChild - done ok");
         }
     }
 
@@ -119,7 +128,9 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             testInstance = new ReflectiveCallable() {
                 @Override
                 protected Object runReflectiveCall() throws Throwable {
-                    return createTest();
+                    Object test = createTest();
+                    logger.warn("methodBlock - test created: {}", test);
+                    return test;
                 }
             }.run();
         } catch (Throwable ex) {
@@ -138,7 +149,36 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         this.frameworkMethod = frameworkMethod;
         logger.info("methodBlock - done: {}", frameworkMethod.getName());
 
-        return super.methodBlock(frameworkMethod);
+        return methodInvoker(frameworkMethod, testInstance);
+    }
+
+    @Override
+    protected Object createTest() throws Exception {
+
+        TestContextManager testContextManager = getTestContextManager();
+        List<TestExecutionListener> testExecutionListeners = testContextManager.getTestExecutionListeners();
+        for(int i = 0; i < testExecutionListeners.size(); i++) {
+            TestExecutionListener testExecutionListener = testExecutionListeners.get(i);
+            if (!(testExecutionListener instanceof ProxyTestExecutionListener)) {
+                ProxyTestExecutionListener proxyTestExecutionListener = new ProxyTestExecutionListener(testExecutionListener);
+                testExecutionListeners.set(i, proxyTestExecutionListener);
+            }
+        }
+
+        Object testInstance = getTestClass().getOnlyConstructor().newInstance();
+
+        MockMvc mockMvc0 = getFieldValue(testInstance, "mockMvc0");
+        logger.warn("createTest before preparation - testInstance.mockMvc0: {}", mockMvc0);
+        try {
+            testContextManager.prepareTestInstance(testInstance);
+        } catch (Exception e) {
+            logger.error("createTest - error when trying to prepare the test instance: " + testInstance, e);
+            throw e;
+        }
+        MockMvc mockMvc1 = getFieldValue(testInstance, "mockMvc0");
+        logger.warn("createTest after  preparation - testInstance.mockMvc0: {}", mockMvc1);
+
+        return testInstance;
     }
 
     @Override
@@ -153,10 +193,10 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         stringBuilder.append("\tmockMvc=").append(mockMvc).append("\n");
         stringBuilder.append("\thandlerMethods=").append(handlerMethods).append("\n");
 
-        stringBuilder.append("\ttestContextManager.testContext=").append(this.getTestContextManager().getTestContext()).append("\n");
+//        stringBuilder.append("\ttestContextManager.testContext=").append(this.getTestContextManager().getTestContext()).append("\n");
         stringBuilder.append("\ttestContextManager.testExecutionsListeners.size=").append(this.getTestContextManager().getTestExecutionListeners().size()).append("\n");
-        stringBuilder.append("\ttestContextManager.testExecutionsListeners=").append(this.getTestContextManager().getTestExecutionListeners().stream().map(
-            Objects::toString).collect(Collectors.toList())).append("\n");
+//        stringBuilder.append("\ttestContextManager.testExecutionsListeners=").append(this.getTestContextManager().getTestExecutionListeners().stream().map(
+//            Objects::toString).collect(Collectors.toList())).append("\n");
 
         stringBuilder.append("}");
         return stringBuilder.toString();

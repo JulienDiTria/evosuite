@@ -21,7 +21,6 @@ import org.evosuite.junit.ClassField;
 import org.evosuite.junit.EvoAnnotation;
 import org.evosuite.utils.JavaCompilerUtils;
 import org.evosuite.utils.Randomness;
-import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.slf4j.Logger;
@@ -31,7 +30,6 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * Global class to set up the Spring context for a given controller if needed. It is used to
