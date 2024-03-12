@@ -29,6 +29,8 @@ public class TestSpringSupport {
         testSuite.addTest(testCase);
         JUnitAnalyzer.removeTestsThatDoNotCompile(testSuite.getTests());
 
+        System.out.println(testCase);
+
         TestSuiteGenerator.writeJUnitTestsAndCreateResult(testSuite);
 
     }

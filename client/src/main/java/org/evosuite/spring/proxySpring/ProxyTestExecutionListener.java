@@ -1,8 +1,8 @@
-package org.evosuite.spring.testExecutionListeners;
+package org.evosuite.spring.proxySpring;
 
-import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.autoconfigure.SpringBootDependencyInjectionTestExecutionListener;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
 
@@ -14,8 +14,14 @@ public class ProxyTestExecutionListener implements TestExecutionListener {
     private final String name;
 
     public ProxyTestExecutionListener(TestExecutionListener testExecutionListener) {
-        this.testExecutionListener = testExecutionListener;
-        this.name = testExecutionListener.getClass().getSimpleName();
+
+        if (testExecutionListener instanceof SpringBootDependencyInjectionTestExecutionListener) {
+            this.testExecutionListener =
+                new ProxySpringBootDepInject((SpringBootDependencyInjectionTestExecutionListener) testExecutionListener);
+        } else {
+            this.testExecutionListener = testExecutionListener;
+        }
+        this.name = this.testExecutionListener.getClass().getSimpleName();
     }
 
     @Override

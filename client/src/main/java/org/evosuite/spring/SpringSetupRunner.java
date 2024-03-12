@@ -2,13 +2,11 @@ package org.evosuite.spring;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.evosuite.spring.testExecutionListeners.ProxyTestExecutionListener;
+import org.evosuite.spring.proxySpring.ProxyTestExecutionListener;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
@@ -74,7 +72,7 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         return requestMappingHandlerMapping.map(RequestMappingHandlerMapping::getHandlerMethods).orElse(null);
     }
 
-    static <T> T getFieldValue(Object holder, String fieldName) {
+    public static <T> T getFieldValue(Object holder, String fieldName) {
         Field field = null;
         Object fieldValue = null;
         try {
@@ -84,6 +82,20 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             return (T) fieldValue;
         } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
             logger.error("getFieldValue Error getting field value: " + fieldName, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T getSuperFieldValue(Object holder, String fieldName) {
+        Field field = null;
+        Object fieldValue = null;
+        try {
+            field = holder.getClass().getSuperclass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            fieldValue = field.get(holder);
+            return (T) fieldValue;
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
+            logger.error("getSuperFieldValue Error getting field value: " + fieldName, e);
             throw new RuntimeException(e);
         }
     }
@@ -155,18 +167,22 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
     @Override
     protected Object createTest() throws Exception {
 
+        Class<?> aClass = this.getClass();
+        Package aPackage = aClass.getPackage();
+        logger.warn("createTest - class: {} in package {}", aClass, aPackage);
+
         TestContextManager testContextManager = getTestContextManager();
         List<TestExecutionListener> testExecutionListeners = testContextManager.getTestExecutionListeners();
-        for(int i = 0; i < testExecutionListeners.size(); i++) {
+        for (int i = 0; i < testExecutionListeners.size(); i++) {
             TestExecutionListener testExecutionListener = testExecutionListeners.get(i);
             if (!(testExecutionListener instanceof ProxyTestExecutionListener)) {
                 ProxyTestExecutionListener proxyTestExecutionListener = new ProxyTestExecutionListener(testExecutionListener);
                 testExecutionListeners.set(i, proxyTestExecutionListener);
             }
         }
+        Collections.shuffle(testExecutionListeners);
 
         Object testInstance = getTestClass().getOnlyConstructor().newInstance();
-
         MockMvc mockMvc0 = getFieldValue(testInstance, "mockMvc0");
         logger.warn("createTest before preparation - testInstance.mockMvc0: {}", mockMvc0);
         try {
