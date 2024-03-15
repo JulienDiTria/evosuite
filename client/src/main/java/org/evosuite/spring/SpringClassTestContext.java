@@ -100,6 +100,8 @@ public class SpringClassTestContext {
             analyzeConstructor(constructor);
         }
 
+        // TODO 13.03.2023 Julien Di Tria: Add all fields with @Autowired annotation to the imports
+
         // Add all mock beans to the imports, only if package is different
         Package pkg = klass.getPackage();
         mockBeans.stream().filter(mockBean -> !mockBean.getPackage().equals(pkg)).forEach(imports::add);

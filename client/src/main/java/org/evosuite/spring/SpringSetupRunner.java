@@ -10,6 +10,7 @@ import org.evosuite.spring.proxySpring.ProxyTestExecutionListener;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -115,17 +116,19 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
             try {
                 statement = methodBlock(frameworkMethod);
                 if (statement instanceof Fail) {
-                    logger.error("runChild - statement creation failed with error: {}", statement);
+                    logger.error("runChild - statement is Fail {}", statement);
+                    notifier.fireTestFailure(new Failure(description, new RuntimeException("statement is Fail : " + statement)));
                 }
-                logger.info("runChild - statement received ok : {}", statement);
+                else {
+                    logger.info("runChild - statement received ok : {}", statement);
+                    notifier.fireTestFinished(description);
+                    logger.info("runChild - done ok");
+                }
             } catch (Throwable ex) {
                 statement = new Fail(ex);
                 logger.error("runChild - statement creation failed with error: {}", ex.toString());
+                notifier.fireTestFailure(new Failure(description, new RuntimeException("statement creation failed", ex)));
             }
-            // THIS IS THE EXECUTION OF THE STATEMENT WHICH WE DON'T WANT
-//            runLeaf(statement, description, notifier);
-            notifier.fireTestFinished(description);
-            logger.info("runChild - done ok");
         }
     }
 

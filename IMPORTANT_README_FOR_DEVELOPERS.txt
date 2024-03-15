@@ -160,7 +160,7 @@ have a.b.c == x.y.z), create a new Git branch with name equal to this
 new version number.
 Then, from command line execute:
 
-  mvn versions:set -DnewVersion=a.b.c
+  mvn versions:set -DnewVersion=a.b.c -DgenerateBackupPoms=false
 
 This command will go through all the pom files in the project, and replace
 the version numbers there with the new one.
