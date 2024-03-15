@@ -2,11 +2,9 @@ package org.evosuite.spring;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.evosuite.spring.proxySpring.ProxyTestExecutionListener;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
@@ -17,8 +15,6 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.test.context.TestContextManager;
-import org.springframework.test.context.TestExecutionListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.method.HandlerMethod;
@@ -26,6 +22,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+
+import static org.evosuite.utils.LoggingUtils.loadLogbackForEvoSuite;
 
 public class SpringSetupRunner extends SpringJUnit4ClassRunner {
 
@@ -87,30 +85,14 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         }
     }
 
-    public static <T> T getSuperFieldValue(Object holder, String fieldName) {
-        Field field = null;
-        Object fieldValue = null;
-        try {
-            field = holder.getClass().getSuperclass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            fieldValue = field.get(holder);
-            return (T) fieldValue;
-        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException e) {
-            logger.error("getSuperFieldValue Error getting field value: " + fieldName, e);
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Perform the same logic as {@link SpringJUnit4ClassRunnerrunChild - (FrameworkMethod, RunNotifier)}, except the statement is not
      * executed and only saved for later use.
      */
     @Override
     protected void runChild(FrameworkMethod frameworkMethod, RunNotifier notifier) {
-        logger.info("runChild - Running child: {}", frameworkMethod.getName());
         Description description = describeChild(frameworkMethod);
         if (isTestMethodIgnored(frameworkMethod)) {
-            logger.info("runChild - TestMethodIgnored: {}", frameworkMethod.getName());
             notifier.fireTestIgnored(description);
         } else {
             try {
@@ -120,13 +102,11 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
                     notifier.fireTestFailure(new Failure(description, new RuntimeException("statement is Fail : " + statement)));
                 }
                 else {
-                    logger.info("runChild - statement received ok : {}", statement);
                     notifier.fireTestFinished(description);
-                    logger.info("runChild - done ok");
                 }
             } catch (Throwable ex) {
                 statement = new Fail(ex);
-                logger.error("runChild - statement creation failed with error: {}", ex.toString());
+                logger.error("runChild - statement creation failed with error", ex);
                 notifier.fireTestFailure(new Failure(description, new RuntimeException("statement creation failed", ex)));
             }
         }
@@ -138,66 +118,29 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
      */
     @Override
     protected Statement methodBlock(FrameworkMethod frameworkMethod) {
-        logger.info("methodBlock - frameworkMethod: {}", frameworkMethod.getName());
         try {
             testInstance = new ReflectiveCallable() {
                 @Override
                 protected Object runReflectiveCall() throws Throwable {
-                    Object test = createTest();
-                    logger.warn("methodBlock - test created: {}", test);
-                    return test;
+                    return createTest();
                 }
             }.run();
         } catch (Throwable ex) {
+            restoreLoggerConfig();
             logger.error("methodBlock - error when trying to create the test: " + frameworkMethod.getName(), ex);
             return new Fail(ex);
         }
-        logger.info("methodBlock - test created for: {}", frameworkMethod.getName());
-        logger.info("methodBlock - testInstance: {}", testInstance);
+        restoreLoggerConfig();
 
         mockMvc = getFieldValue(testInstance, "mockMvc0");
-        logger.info("methodBlock - mockMvc object: {}", mockMvc);
-
         handlerMethods = getHandlerMethodsFromMockMvc(mockMvc);
-        logger.info("methodBlock - handlerMethods: {}", handlerMethods);
-
         this.frameworkMethod = frameworkMethod;
-        logger.info("methodBlock - done: {}", frameworkMethod.getName());
 
         return methodInvoker(frameworkMethod, testInstance);
     }
 
-    @Override
-    protected Object createTest() throws Exception {
-
-        Class<?> aClass = this.getClass();
-        Package aPackage = aClass.getPackage();
-        logger.warn("createTest - class: {} in package {}", aClass, aPackage);
-
-        TestContextManager testContextManager = getTestContextManager();
-        List<TestExecutionListener> testExecutionListeners = testContextManager.getTestExecutionListeners();
-        for (int i = 0; i < testExecutionListeners.size(); i++) {
-            TestExecutionListener testExecutionListener = testExecutionListeners.get(i);
-            if (!(testExecutionListener instanceof ProxyTestExecutionListener)) {
-                ProxyTestExecutionListener proxyTestExecutionListener = new ProxyTestExecutionListener(testExecutionListener);
-                testExecutionListeners.set(i, proxyTestExecutionListener);
-            }
-        }
-        Collections.shuffle(testExecutionListeners);
-
-        Object testInstance = getTestClass().getOnlyConstructor().newInstance();
-        MockMvc mockMvc0 = getFieldValue(testInstance, "mockMvc0");
-        logger.warn("createTest before preparation - testInstance.mockMvc0: {}", mockMvc0);
-        try {
-            testContextManager.prepareTestInstance(testInstance);
-        } catch (Exception e) {
-            logger.error("createTest - error when trying to prepare the test instance: " + testInstance, e);
-            throw e;
-        }
-        MockMvc mockMvc1 = getFieldValue(testInstance, "mockMvc0");
-        logger.warn("createTest after  preparation - testInstance.mockMvc0: {}", mockMvc1);
-
-        return testInstance;
+    private void restoreLoggerConfig() {
+        loadLogbackForEvoSuite();
     }
 
     @Override
