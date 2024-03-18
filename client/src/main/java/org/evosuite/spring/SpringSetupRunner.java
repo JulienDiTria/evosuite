@@ -5,6 +5,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.evosuite.runtime.RuntimeSettings;
+import org.evosuite.runtime.sandbox.Sandbox;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.Fail;
 import org.junit.runner.Description;
@@ -139,8 +141,18 @@ public class SpringSetupRunner extends SpringJUnit4ClassRunner {
         return methodInvoker(frameworkMethod, testInstance);
     }
 
+    /**
+     * Restore the logger configuration to the original state.
+     * <p>
+     *     This can be used after loading Spring context (as Spring overload the logger configuration)
+     */
     private void restoreLoggerConfig() {
+        // as in the client, the runtime sandbox might be activated and not allow to create new sockets connections.
+        // Disable it just for the logger configuration restoration
+        Sandbox.SandboxMode currentSandboxMode = RuntimeSettings.sandboxMode;
+        RuntimeSettings.sandboxMode = Sandbox.SandboxMode.OFF;
         loadLogbackForEvoSuite();
+        RuntimeSettings.sandboxMode = currentSandboxMode;
     }
 
     @Override

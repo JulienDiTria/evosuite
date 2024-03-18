@@ -58,6 +58,10 @@
 
     <logger name="org.evosuite.shaded" level="OFF" />
 
+    <logger name="org.springframework" level="${log.level:-WARN}">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
     <root level="OFF" />
 
 
