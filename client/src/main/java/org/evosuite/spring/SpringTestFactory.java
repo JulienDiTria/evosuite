@@ -1,5 +1,6 @@
 package org.evosuite.spring;
 
+import java.util.Map;
 import org.evosuite.Properties;
 import org.evosuite.ga.ConstructionFailedException;
 import org.evosuite.testcase.DefaultTestCase;
@@ -9,6 +10,8 @@ import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 public class SpringTestFactory {
@@ -48,7 +51,7 @@ public class SpringTestFactory {
         logger.debug("addRequestBuilder");
         int length;
         length = testCase.size();
-        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo);
+        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo, null);
         position += (testCase.size() - length);
         SmockRequestBuilder.addParamsToRequestBuilder(testCase, position, requestBuilder, requestMappingInfo);
         return requestBuilder;
@@ -116,14 +119,17 @@ public class SpringTestFactory {
         assertRecursionDepth(recursionDepth);
 
         // get a random request mapping info from SpringSupport
-        RequestMappingInfo requestMappingInfo = SpringSupport.getRandomRequestMappingInfo();
-        if (requestMappingInfo == null) {
+        Map.Entry<RequestMappingInfo, HandlerMethod> requestInfoToHandler = SpringSupport.getRandomRequestMappingInfo();
+        if (requestInfoToHandler == null || requestInfoToHandler.getKey() == null) {
             logger.warn("No request mapping info available");
             return false;
         }
 
+        RequestMappingInfo requestMappingInfo = requestInfoToHandler.getKey();
+        HandlerMethod handlerMethod = requestInfoToHandler.getValue();
+
         // create the request builder and add the params to it
-        SmockRequestBuilder.addRequestBuilder(test, position, requestMappingInfo);
+        SmockRequestBuilder.addRequestBuilder(test, position, requestMappingInfo, handlerMethod);
         return true;
     }
 
@@ -151,10 +157,17 @@ public class SpringTestFactory {
 //            return false;
         }
 
-        // add the mock mvc object as an injection
-        length = test.size();
-        VariableReference mockMvc = TestFactory.getInstance().addInjection(test, SpringSupport.getMockMvc(), position, recursionDepth);
-        position += (test.size() - length);
+        // reuse mock mvc object if already in test, otherwise create it
+        VariableReference mockMvc;
+        if(test.hasObject(MockMvc.class, position)) {
+            mockMvc = test.getLastObject(MockMvc.class, 0);
+        }
+        else {
+            // add the mock mvc object as an injection
+            length = test.size();
+            mockMvc = TestFactory.getInstance().addInjection(test, SpringSupport.getMockMvc(), position, recursionDepth);
+            position += (test.size() - length);
+        }
 
         // add the "perform" statement
         length = test.size();

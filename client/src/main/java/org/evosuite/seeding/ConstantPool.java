@@ -20,6 +20,7 @@
 
 package org.evosuite.seeding;
 
+import org.evosuite.utils.generic.GenericClass;
 import org.objectweb.asm.Type;
 
 /**
@@ -80,6 +81,13 @@ public interface ConstantPool {
      * @return a long.
      */
     long getRandomLong();
+
+    /**
+     * get a random value based on the given class
+     *
+     * @param klass the class of the object to get.
+     */
+    Object getRandomValue(GenericClass<?> klass);
 
     /**
      * <p>

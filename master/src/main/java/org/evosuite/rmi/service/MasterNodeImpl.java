@@ -89,7 +89,6 @@ public class MasterNodeImpl implements MasterNodeRemote, MasterNodeLocal {
     @Override
     public void evosuite_informChangeOfStateInClient(String clientRmiIdentifier,
                                                      ClientState state, ClientStateInformation information) throws RemoteException {
-        logger.warn("Client " + clientRmiIdentifier + " changed state to " + state + " (" + information + ")");
         clientStates.put(clientRmiIdentifier, state);
         // To be on the safe side
         information.setState(state);

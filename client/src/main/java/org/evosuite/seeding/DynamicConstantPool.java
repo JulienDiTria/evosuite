@@ -27,7 +27,7 @@ import org.objectweb.asm.Type;
 /**
  * @author Gordon Fraser
  */
-public class DynamicConstantPool implements ConstantPool {
+public class DynamicConstantPool extends AbstractConstantPool {
 
     private final RandomAccessQueue<String> stringPool = new DefaultRandomAccessQueue<>();
 

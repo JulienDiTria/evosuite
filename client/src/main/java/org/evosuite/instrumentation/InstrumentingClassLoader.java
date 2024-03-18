@@ -151,10 +151,12 @@ public class InstrumentingClassLoader extends ClassLoader {
             Class<?> result = defineClass(fullyQualifiedTargetClass, byteBuffer, 0, byteBuffer.length);
             classes.put(fullyQualifiedTargetClass, result);
 
-            logger.info("Loaded class: " + fullyQualifiedTargetClass);
+            logger.info("Loaded class: {}", fullyQualifiedTargetClass);
             return result;
         } catch (Throwable t) {
-            logger.info("Error while loading class: " + t);
+            logger.error("Error while loading class: ", t);
+            // TODO 18.03.2024 Julien Di Tria : can remove the warn when error logger works correctly with Spring
+            logger.warn("Error while loading class: ", t);
             throw new ClassNotFoundException(t.getMessage(), t);
         } finally {
             if (is != null)

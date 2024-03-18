@@ -26,7 +26,7 @@ import org.objectweb.asm.Type;
 /**
  * Created by gordon on 06/01/2017.
  */
-public class StaticConstantVariableProbabilityPool implements ConstantPool {
+public class StaticConstantVariableProbabilityPool extends AbstractConstantPool {
 
 
     private final FrequencyBasedPool<String> stringPool = new FrequencyBasedPool<>();

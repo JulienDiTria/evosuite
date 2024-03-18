@@ -26,7 +26,7 @@ import org.objectweb.asm.Type;
 /**
  * Created by gordon on 06/01/2017.
  */
-public class DynamicConstantVariableProbabilityPool implements ConstantPool {
+public class DynamicConstantVariableProbabilityPool extends AbstractConstantPool {
 
     private final RandomAccessQueue<String> stringPool = new FrequencyBasedRandomAccessQueue<>();
 

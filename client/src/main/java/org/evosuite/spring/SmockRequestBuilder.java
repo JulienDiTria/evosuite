@@ -22,14 +22,22 @@
 
 package org.evosuite.spring;
 
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.evosuite.Properties;
 import org.evosuite.ga.ConstructionFailedException;
+import org.evosuite.seeding.ConstantPool;
+import org.evosuite.seeding.ConstantPoolManager;
 import org.evosuite.testcase.TestCase;
 import org.evosuite.testcase.statements.ArrayStatement;
 import org.evosuite.testcase.statements.AssignmentStatement;
@@ -40,17 +48,24 @@ import org.evosuite.testcase.variable.ArrayReference;
 import org.evosuite.testcase.variable.ConstantValue;
 import org.evosuite.testcase.variable.VariableReference;
 import org.evosuite.testcase.variable.VariableReferenceImpl;
+import org.evosuite.utils.generic.GenericClass;
 import org.evosuite.utils.generic.GenericClassFactory;
 import org.evosuite.utils.generic.GenericMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.condition.NameValueExpression;
 import org.springframework.web.servlet.mvc.condition.ParamsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import static org.apache.commons.lang3.StringUtils.contains;
 
 public class SmockRequestBuilder {
 
@@ -86,9 +101,10 @@ public class SmockRequestBuilder {
      * @return the request builder reference added to the testcase
      * @throws ConstructionFailedException if the construction of the request builder fails
      */
-    public static VariableReference addRequestBuilder(TestCase testCase, int position, RequestMappingInfo requestMappingInfo) throws ConstructionFailedException {
+    public static VariableReference addRequestBuilder(TestCase testCase, int position, RequestMappingInfo requestMappingInfo,
+        HandlerMethod handlerMethod) throws ConstructionFailedException {
         int length = testCase.size();
-        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo);
+        VariableReference requestBuilder = SmockRequestBuilder.createRequestBuilder(testCase, position, requestMappingInfo, handlerMethod);
         position += (testCase.size() - length);
 
         requestBuilder = SmockRequestBuilder.addParamsToRequestBuilder(testCase, position, requestBuilder, requestMappingInfo);
@@ -107,9 +123,9 @@ public class SmockRequestBuilder {
      * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
      * @return the request builder reference added to the testcase
      */
-    public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo)
+    public static VariableReference createRequestBuilder(TestCase tc, RequestMappingInfo requestMappingInfo, HandlerMethod handlerMethod)
         throws ConstructionFailedException {
-        return createRequestBuilder(tc, tc.size(), requestMappingInfo);
+        return createRequestBuilder(tc, tc.size(), requestMappingInfo, handlerMethod);
     }
 
     /**
@@ -123,7 +139,7 @@ public class SmockRequestBuilder {
      * @param requestMappingInfo the request mapping info provided by the Spring framework corresponding to that request
      * @return the request builder reference added to the testcase
      */
-    public static VariableReference createRequestBuilder(TestCase tc, int position, RequestMappingInfo requestMappingInfo)
+    public static VariableReference createRequestBuilder(TestCase tc, int position, RequestMappingInfo requestMappingInfo, HandlerMethod handlerMethod)
         throws ConstructionFailedException {
         logger.debug("createRequestBuilder");
 
@@ -131,12 +147,9 @@ public class SmockRequestBuilder {
         HttpMethod httpMethod = HttpMethod.resolve(requestMappingInfo.getMethodsCondition().getMethods().iterator().next().name());
         ConstantValue httpMethodValue = new ConstantValue(tc, GenericClassFactory.get(HttpMethod.class), httpMethod);
 
-        // TODO 22.02.2024 Julien Di Tria
-        //  url value can be GA variable to be mutated (if not given by the request mapping info)
-        // get the url template as the first pattern into a string constant
-        String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
-        String validUrl = validUriFromOnUrl(url, 0);
-        ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), validUrl);
+        // get the url template
+        String url = createValidUriFromUrl(requestMappingInfo, handlerMethod);
+        ConstantValue urlValue = new ConstantValue(tc, GenericClassFactory.get(String.class), url);
 
         // get the method by reflection
         Method method = null;
@@ -152,6 +165,41 @@ public class SmockRequestBuilder {
 
         // add the statement to the test case
         return tc.addStatement(statement, position);
+    }
+
+    private static String createValidUriFromUrl(RequestMappingInfo requestMappingInfo, HandlerMethod handlerMethod) throws ConstructionFailedException {
+
+        // TODO 22.02.2024 Julien Di Tria
+        //  url value can be GA variable to be mutated (if not given by the request mapping info)
+        String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
+
+        Map<String, Object> vars = new HashMap<>();
+        // check each parameter of the handler method to see if they are used in the url based on the annotations
+        for(MethodParameter methodParameter : handlerMethod.getMethodParameters()) {
+            if (methodParameter.hasParameterAnnotation(PathVariable.class)){
+                PathVariable pathVariable = methodParameter.getParameterAnnotation(PathVariable.class);
+                if (pathVariable != null && StringUtils.hasText(pathVariable.value())){
+                    // check if used in the url
+                    String name = pathVariable.value();
+                    if (contains(url, "{" + name + "}")) {
+                        // if used, generate a random value for the parameter
+                        Type parameterType = methodParameter.getParameterType();
+                        GenericClass<?> clazz = GenericClassFactory.get(parameterType);
+                        Object value = ConstantPoolManager.getInstance().getConstantPool().getRandomValue(clazz);
+
+                        // add the value to the vars map
+                        vars.put(name, value);
+                    }
+                }
+            }
+        }
+
+        try {
+            // try to build the url with the variables
+            return UriComponentsBuilder.fromUriString(url).buildAndExpand(vars).encode().toUriString();
+        } catch (IllegalArgumentException e1) {
+            throw new ConstructionFailedException("unable to generate a valid url from: " + url + " with vars: " + vars);
+        }
     }
 
     /**

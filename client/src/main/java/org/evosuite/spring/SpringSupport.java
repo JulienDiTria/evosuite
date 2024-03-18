@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,18 +247,21 @@ public class SpringSupport {
      *
      * @return a random RequestMappingInfo from the handler methods
      */
-    public static RequestMappingInfo getRandomRequestMappingInfo() {
+    public static Map.Entry<RequestMappingInfo, HandlerMethod> getRandomRequestMappingInfo() {
         if (instance.handlerMethods != null) {
-            Set<RequestMappingInfo> requestMappingInfos = instance.handlerMethods.keySet();
-            requestMappingInfos = requestMappingInfos.stream()
-                .filter(requestMappingInfo -> !requestMappingInfo.getMethodsCondition().getMethods().isEmpty())
+
+            Set<Map.Entry<RequestMappingInfo,HandlerMethod>> kvs_requestMappingInfo_handler = instance.handlerMethods.entrySet();
+            kvs_requestMappingInfo_handler = kvs_requestMappingInfo_handler.stream()
+                .filter(kv -> !kv.getKey().getMethodsCondition().getMethods().isEmpty())
                 .collect(Collectors.toSet());
-            if (!requestMappingInfos.isEmpty()) {
-                return Randomness.choice(requestMappingInfos);
+            if (!kvs_requestMappingInfo_handler.isEmpty()) {
+                return Randomness.choice(kvs_requestMappingInfo_handler);
             }
         }
 
-        return RequestMappingHandlerMapping.getRequestMappingInfo();
+        HashMap<RequestMappingInfo, HandlerMethod> singleEntry = new HashMap<>();
+        singleEntry.put(RequestMappingHandlerMapping.getRequestMappingInfo(), null);
+        return singleEntry.entrySet().iterator().next();
     }
 
     public static void setMockMvc(MockMvc mockMvc) {

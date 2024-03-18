@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  * @author Gordon Fraser
  */
-public class StaticConstantPool implements ConstantPool {
+public class StaticConstantPool extends AbstractConstantPool {
 
     private final Set<String> stringPool = Collections.synchronizedSet(new LinkedHashSet<>());
 
