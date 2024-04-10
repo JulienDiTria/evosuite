@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import org.evosuite.TestGenerationContext;
+import org.evosuite.instrumentation.InstrumentingClassLoader;
 import org.evosuite.junit.ClassField;
 import org.evosuite.junit.EvoAnnotation;
 import org.evosuite.utils.JavaCompilerUtils;
@@ -63,21 +65,31 @@ public class SpringSupport {
      */
     public static void setup(String className) {
         if (isHandlerType(className)) {
-            try {
-                logger.warn("setup - creating simple test suite for '{}'", className);
+            logger.info("setup - creating simple test suite for '{}'", className);
 
-                // create simple test for spring controller
-                Class<?> simpleTestSuite = createSimpleTestSuite(className);
-                
-                logger.warn("setup - class loaded '{}'", simpleTestSuite.getName());
+            // create simple test for spring controller
+            Class<?> simpleTestSuite = createSpringTestSuite(className);
+            // execute the test with spring runner to load the spring context
+            setupSpringRunner(simpleTestSuite);
 
-                // execute the test with spring runner
-                setupSpringRunner(simpleTestSuite);
-                logger.warn("setup - spring runner loaded");
+            logger.info("setup - spring context loaded");
+        }
+    }
 
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    /**
+     * Create a basic test suite for the given controller using the @RunWith(SpringRunner.class) and @WebMvcTest(controller.class)
+     * annotations and load it.
+     *
+     * @param controller the controller for which to create the test suite
+     * @return a test suite loaded into the classpath
+     */
+    private static Class<?> createSpringTestSuite(Object controller){
+        try {
+            return createSpringTestSuiteThrows(controller);
+        } catch (IOException e) {
+            logger.warn("createSpringTestSuite - exception while creating simple test suite for '{}'", controller, e);
+            logger.error("createSpringTestSuite - exception while creating simple test suite for '{}'", controller, e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -94,9 +106,10 @@ public class SpringSupport {
      * @return a test suite loaded into the classpath
      * @throws IOException if an I/O error occurs,
      */
-    private static Class<?> createSimpleTestSuite(Object controller) throws IOException {
+    private static Class<?> createSpringTestSuiteThrows(Object controller) throws IOException {
         Class<?> clazz = getClassForObject(controller);
         ClassLoader classLoader = logger.getClass().getClassLoader();
+//        InstrumentingClassLoader instrumentingClassLoader = TestGenerationContext.getInstance().getClassLoaderForSUT();
 
         // analyze the controller to create a suitable empty test class
         instance.springClassTestContext = new SpringClassTestContext(clazz);
@@ -144,6 +157,8 @@ public class SpringSupport {
 
         // load class
         try {
+//            Class<?> loadedClass = instrumentingClassLoader.loadClassFromFile(className, compiledFileInClasspath.getAbsolutePath());
+//            return loadedClass;
             return classLoader.loadClass(className);
         } catch (ClassNotFoundException e) {
             logger.warn("createSimpleTestSuite - Could not load className '{}' created from file '{}'", className, compiledFileInClasspath.getPath());

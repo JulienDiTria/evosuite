@@ -14,6 +14,7 @@ public class TestSpringSupport {
 
     @Test
     public void test0() {
+//        Properties.CP = "/Users/julien.ditria/github/JulienDiTria/evosuite/client/target/test-classes";
         SpringSupport.setup(OwnerController.class.getName());
         System.out.println("all good");
     }

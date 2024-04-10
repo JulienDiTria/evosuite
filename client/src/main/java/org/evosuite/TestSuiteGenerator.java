@@ -689,7 +689,7 @@ public class TestSuiteGenerator {
             List<TestCase> springTests = tests.stream().filter(t -> t.usesSpring()).collect(Collectors.toList());
             if (!springTests.isEmpty()) {
                 TestSuiteWriter springSuiteWriter = new TestSuiteWriter(true);
-                suiteWriter.insertTests(springTests);
+                springSuiteWriter.insertTests(springTests);
                 springSuiteWriter.writeTestSuite(name + "_Spring" + suffix, testDir, testSuite.getLastExecutionResults());
             }
         }

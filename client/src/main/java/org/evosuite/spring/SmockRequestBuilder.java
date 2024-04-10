@@ -109,7 +109,7 @@ public class SmockRequestBuilder {
 
         requestBuilder = SmockRequestBuilder.addParamsToRequestBuilder(testCase, position, requestBuilder, requestMappingInfo);
 
-        // add other options...
+        // TODO 26.02.2024 Julien Di Tria : add other options...
         return requestBuilder;
     }
 
@@ -172,6 +172,10 @@ public class SmockRequestBuilder {
         // TODO 22.02.2024 Julien Di Tria
         //  url value can be GA variable to be mutated (if not given by the request mapping info)
         String url = requestMappingInfo.getPatternsCondition().getPatterns().iterator().next();
+
+        if (handlerMethod == null) {
+            return validUriFromOnUrl(url, 0);
+        }
 
         Map<String, Object> vars = new HashMap<>();
         // check each parameter of the handler method to see if they are used in the url based on the annotations
